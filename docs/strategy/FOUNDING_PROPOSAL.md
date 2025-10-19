@@ -19,8 +19,6 @@
 - Google Civic API shutdown (April 2025) created market gap we're filling
 - Trust in civic tech requires nonprofit structure—we're positioned perfectly
 
-**Our Ask**: Join us as a co-founder to build the civic infrastructure America needs. We're seeking one technical co-founder and potentially one additional mission-driven partner to launch as a 501(c)(3) nonprofit in 2026.
-
 ---
 
 ## Vision & Mission
