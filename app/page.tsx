@@ -40,7 +40,7 @@ export default function Page() {
             Take action with your representatives
           </h1>
           <p className="text-base md:text-lg text-gray-600 max-w-3xl">
-            Enter your address to see your elected officials from local to federal, then generate a respectful email to contact them.
+            Enter your address to see your elected officials from local to federal level, then generate a respectful email to contact them.
           </p>
         </header>
 
