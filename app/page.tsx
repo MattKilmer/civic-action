@@ -52,24 +52,78 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen p-6 md:p-10 space-y-8 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold">Take action with your representatives</h1>
-      <p className="text-gray-600">Enter your address to see your elected officials from local to federal, then generate a respectful email to contact them.</p>
+    <main className="min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
+        {/* Page Header */}
+        <header className="space-y-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+            Take action with your representatives
+          </h1>
+          <p className="text-base md:text-lg text-gray-600 max-w-3xl">
+            Enter your address to see your elected officials from local to federal, then generate a respectful email to contact them.
+          </p>
+        </header>
 
-      <AddressForm onSubmit={fetchOfficials} />
+        {/* Address Form Section */}
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
+          <AddressForm onSubmit={fetchOfficials} />
+        </section>
 
-      <div className="border-t pt-6 space-y-6">
-        <h2 className="text-xl font-semibold">1) Choose your issue & stance</h2>
-        <IssuePicker onChange={(v) => setIssue(v)} />
-      </div>
+        {/* Issue Picker Section */}
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+              1
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Choose your issue & stance
+            </h2>
+          </div>
+          <IssuePicker onChange={(v) => setIssue(v)} />
+        </section>
 
-      <div className="border-t pt-6 space-y-6">
-        <h2 className="text-xl font-semibold">2) Contact your officials</h2>
-        {loading && <div>Loading your officials…</div>}
-        {!loading && officials && issue && (
-          <OfficialsList officials={officials} issue={issue} location={location} />
-        )}
-        {!loading && officials && !issue && <div className="text-gray-600">Pick an issue above to enable drafting.</div>}
+        {/* Officials List Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+              2
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Contact your officials
+            </h2>
+          </div>
+
+          {loading && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+              <p className="mt-3 text-gray-600">Loading your officials…</p>
+            </div>
+          )}
+
+          {!loading && officials && issue && (
+            <OfficialsList officials={officials} issue={issue} location={location} />
+          )}
+
+          {!loading && officials && !issue && (
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
+              <p className="text-blue-900 font-medium">
+                👆 Select an issue and stance above to start drafting emails to your representatives.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-gray-200 pt-8 mt-12">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-gray-600">
+              🔒 Privacy-first: We never store your address, political positions, or email drafts.
+            </p>
+            <p className="text-sm text-gray-500">
+              Open-source civic engagement tool • Nonpartisan • Free forever
+            </p>
+          </div>
+        </footer>
       </div>
     </main>
   );
