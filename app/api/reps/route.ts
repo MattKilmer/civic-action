@@ -41,5 +41,11 @@ export async function GET(req: NextRequest) {
   const data = await r.json();
   const officials = mapFiveCallsToOfficials(data);
 
-  return Response.json({ address, officials });
+  return Response.json({
+    address,
+    officials,
+    location: data.location,
+    state: data.state,
+    district: data.district,
+  });
 }

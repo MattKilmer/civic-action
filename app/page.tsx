@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import TopNav from "./components/TopNav";
 import Footer from "./components/Footer";
 import AddressForm from "./components/AddressForm";
+import LocationStatus from "./components/LocationStatus";
 import IssuePicker, { type Issue } from "./components/IssuePicker";
 import OfficialsList from "./components/OfficialsList";
 
@@ -15,22 +16,41 @@ export default function Page() {
   const [officials, setOfficials] = useState<Official[] | null>(null);
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState<{ city?: string; state?: string }>({ city: "San Francisco", state: "California" });
+  const [submittedAddress, setSubmittedAddress] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ city?: string; state?: string; district?: string } | null>(null);
+  const addressFormRef = useRef<HTMLElement>(null);
 
   async function fetchOfficials(address: string) {
     setLoading(true);
     setOfficials(null);
+    setSubmittedAddress(address);
     try {
       const r = await fetch(`/api/reps?address=${encodeURIComponent(address)}`, { cache: "no-store" });
       const json = await r.json();
       if (json.officials) {
         setOfficials(json.officials);
+        // Extract location info from API response (5 Calls API returns location, state, district)
+        setLocation({
+          city: json.location || address,
+          state: json.state,
+          district: json.district,
+        });
       } else {
         setOfficials([]);
+        setLocation(null);
       }
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleEditAddress() {
+    // Reset state and scroll to address form
+    setSubmittedAddress(null);
+    setOfficials(null);
+    setLocation(null);
+    setIssue(null);
+    addressFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
@@ -49,9 +69,19 @@ export default function Page() {
         </header>
 
         {/* Address Form Section */}
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
+        <section ref={addressFormRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
           <AddressForm onSubmit={fetchOfficials} />
         </section>
+
+        {/* Location Status */}
+        {submittedAddress && (
+          <LocationStatus
+            address={submittedAddress}
+            loading={loading}
+            location={location || undefined}
+            onEdit={handleEditAddress}
+          />
+        )}
 
         {/* Issue Picker Section */}
         <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
@@ -77,18 +107,11 @@ export default function Page() {
             </h2>
           </div>
 
-          {loading && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
-              <p className="mt-3 text-gray-600">Loading your officials…</p>
-            </div>
+          {officials && issue && (
+            <OfficialsList officials={officials} issue={issue} location={location || undefined} />
           )}
 
-          {!loading && officials && issue && (
-            <OfficialsList officials={officials} issue={issue} location={location} />
-          )}
-
-          {!loading && officials && !issue && (
+          {officials && !loading && !issue && (
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
               <p className="text-blue-900 font-medium">
                 👆 Select an issue and stance above to start drafting emails to your representatives.
