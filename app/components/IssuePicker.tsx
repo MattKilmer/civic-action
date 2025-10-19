@@ -57,19 +57,19 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
       </div>
 
       <input
-        className="w-full border rounded-xl px-3 py-2"
+        className="w-full border rounded-xl px-3 py-2 text-gray-900 bg-white"
         placeholder="Or type a custom topic"
         value={issue.topic}
         onChange={(e) => update("topic", e.target.value)}
       />
 
       <div className="grid md:grid-cols-2 gap-2">
-        <input className="border rounded-xl px-3 py-2" placeholder="Bill number (optional)" onChange={(e) => update("bill", e.target.value)} />
-        <input className="border rounded-xl px-3 py-2" placeholder="Desired action (e.g., please vote yes)" onChange={(e) => update("desiredAction", e.target.value)} />
+        <input className="border rounded-xl px-3 py-2 text-gray-900 bg-white" placeholder="Bill number (optional)" onChange={(e) => update("bill", e.target.value)} />
+        <input className="border rounded-xl px-3 py-2 text-gray-900 bg-white" placeholder="Desired action (e.g., please vote yes)" onChange={(e) => update("desiredAction", e.target.value)} />
       </div>
 
       <textarea
-        className="w-full border rounded-xl px-3 py-2"
+        className="w-full border rounded-xl px-3 py-2 text-gray-900 bg-white"
         placeholder="(Optional) One sentence on how this affects you personally"
         rows={3}
         onChange={(e) => update("personalImpact", e.target.value)}

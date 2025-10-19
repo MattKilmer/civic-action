@@ -63,7 +63,7 @@ export default function OfficialCard({ official, draft, onDraft }: Props) {
           <div className="mt-2">
             <label className="text-sm font-medium">Copy & paste into the official contact form:</label>
             <textarea
-              className="w-full border rounded-xl p-2 mt-1"
+              className="w-full border rounded-xl p-2 mt-1 text-gray-900 bg-white"
               value={draft}
               readOnly
               rows={8}

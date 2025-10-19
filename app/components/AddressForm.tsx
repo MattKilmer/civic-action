@@ -13,7 +13,7 @@ export default function AddressForm({ onSubmit }: { onSubmit: (address: string) 
       }}
     >
       <input
-        className="flex-1 border rounded-2xl px-4 py-3 outline-none focus:ring"
+        className="flex-1 border rounded-2xl px-4 py-3 outline-none focus:ring text-gray-900 bg-white"
         placeholder="Enter your full street address"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
