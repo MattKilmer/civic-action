@@ -121,7 +121,7 @@ export default function OfficialCard({ official, draft, onDraft }: Props) {
           </label>
           <textarea
             id={`draft-${official.name}`}
-            className="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y bg-gray-50"
+            className="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
             value={draft}
             readOnly
             rows={10}

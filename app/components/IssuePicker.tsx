@@ -84,7 +84,7 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
         <input
           id="custom-topic"
           type="text"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           placeholder="Type your own topic"
           value={issue.topic}
           onChange={(e) => update("topic", e.target.value)}
@@ -100,7 +100,7 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
           <input
             id="bill-number"
             type="text"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="e.g., HR 1234"
             onChange={(e) => update("bill", e.target.value)}
           />
@@ -112,7 +112,7 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
           <input
             id="desired-action"
             type="text"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="e.g., Please vote yes"
             onChange={(e) => update("desiredAction", e.target.value)}
           />
@@ -126,7 +126,7 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
         </label>
         <textarea
           id="personal-impact"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
           placeholder="How does this issue affect you personally?"
           rows={3}
           onChange={(e) => update("personalImpact", e.target.value)}

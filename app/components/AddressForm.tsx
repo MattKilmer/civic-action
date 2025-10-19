@@ -20,7 +20,7 @@ export default function AddressForm({ onSubmit }: { onSubmit: (address: string) 
           <input
             id="address-input"
             type="text"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="Enter your address (e.g., San Francisco, CA)"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
