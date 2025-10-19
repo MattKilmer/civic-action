@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import TopNav from "./components/TopNav";
+import Footer from "./components/Footer";
 import AddressForm from "./components/AddressForm";
 import IssuePicker, { type Issue } from "./components/IssuePicker";
 import OfficialsList from "./components/OfficialsList";
@@ -32,7 +34,9 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <>
+      <TopNav />
+      <main className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
         {/* Page Header */}
         <header className="space-y-3">
@@ -92,19 +96,9 @@ export default function Page() {
             </div>
           )}
         </section>
-
-        {/* Footer */}
-        <footer className="border-t border-gray-200 pt-8 mt-12">
-          <div className="text-center space-y-2">
-            <p className="text-sm text-gray-600">
-              🔒 Privacy-first: We never store your address, political positions, or email drafts.
-            </p>
-            <p className="text-sm text-gray-500">
-              Open-source civic engagement tool • Nonpartisan • Free forever
-            </p>
-          </div>
-        </footer>
       </div>
     </main>
+    <Footer />
+  </>
   );
 }
