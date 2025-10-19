@@ -1,0 +1,23 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="180" height="180" fill="#2563eb" rx="40"/>
+
+  <!-- Capitol building dome -->
+  <path d="M90 35L65 60H115L90 35Z" fill="white"/>
+  <rect x="80" y="60" width="20" height="10" fill="white"/>
+
+  <!-- Capitol building columns -->
+  <rect x="50" y="70" width="10" height="50" fill="white"/>
+  <rect x="72" y="70" width="10" height="50" fill="white"/>
+  <rect x="98" y="70" width="10" height="50" fill="white"/>
+  <rect x="120" y="70" width="10" height="50" fill="white"/>
+
+  <!-- Base -->
+  <rect x="45" y="120" width="90" height="15" fill="white"/>
+
+  <!-- Communication dots (representing citizens connecting) -->
+  <circle cx="30" cy="110" r="8" fill="#60a5fa"/>
+  <circle cx="150" cy="110" r="8" fill="#60a5fa"/>
+  <line x1="38" y1="110" x2="60" y2="110" stroke="#60a5fa" stroke-width="4"/>
+  <line x1="120" y1="110" x2="142" y2="110" stroke="#60a5fa" stroke-width="4"/>
+</svg>
