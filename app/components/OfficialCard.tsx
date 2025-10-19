@@ -128,7 +128,7 @@ export default function OfficialCard({ official, draft, onDraft }: Props) {
             onFocus={(e) => e.currentTarget.select()}
           />
           <p className="text-sm text-gray-600">
-            Click to select all, then copy and paste into your email client or the official's contact form.
+            Click to select all, then copy and paste into your email client or the official&apos;s contact form.
           </p>
         </div>
       )}
