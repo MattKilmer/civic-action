@@ -52,3 +52,56 @@ export function mapCivicToOfficials(data: CivicResponse): OfficialContact[] {
   }
   return results;
 }
+
+// 5 Calls API Types
+type FiveCallsFieldOffice = {
+  phone: string;
+  city: string;
+};
+
+type FiveCallsRepresentative = {
+  id: string;
+  name: string;
+  phone: string;
+  url: string;
+  photoURL?: string;
+  party: string;
+  state: string;
+  reason: string;
+  area: string;
+  field_offices: FiveCallsFieldOffice[];
+};
+
+type FiveCallsResponse = {
+  location: string;
+  lowAccuracy: boolean;
+  state: string;
+  district: string;
+  representatives: FiveCallsRepresentative[];
+};
+
+export function mapFiveCallsToOfficials(data: FiveCallsResponse): OfficialContact[] {
+  if (!data.representatives) return [];
+
+  return data.representatives.map((rep) => {
+    // Collect all phone numbers (main + field offices)
+    const phones = [rep.phone];
+    rep.field_offices?.forEach((office) => {
+      if (office.phone && office.phone !== rep.phone) {
+        phones.push(office.phone);
+      }
+    });
+
+    return {
+      name: rep.name,
+      party: rep.party || undefined,
+      role: rep.reason, // e.g., "This is your representative in the House."
+      level: rep.area, // e.g., "US House", "US Senate", "Governor"
+      phones,
+      emails: [], // 5 Calls API doesn't provide emails
+      urls: rep.url ? [rep.url] : [],
+      photoUrl: rep.photoURL,
+      primaryUrl: rep.url || undefined,
+    };
+  });
+}

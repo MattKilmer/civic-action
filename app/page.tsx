@@ -10,27 +10,7 @@ type Official = {
 };
 
 export default function Page() {
-  // Mock officials for testing AI letter writer (Google Civic API shut down April 2025)
-  const mockOfficials: Official[] = [
-    {
-      name: "Nancy Pelosi",
-      role: "U.S. Representative",
-      party: "Democratic",
-      phones: ["202-225-4965"],
-      emails: ["sf.nancy@mail.house.gov"],
-      urls: ["https://pelosi.house.gov"],
-    },
-    {
-      name: "Gavin Newsom",
-      role: "Governor",
-      party: "Democratic",
-      phones: ["916-445-2841"],
-      emails: ["governor@gov.ca.gov"],
-      urls: ["https://www.gov.ca.gov"],
-    },
-  ];
-
-  const [officials, setOfficials] = useState<Official[] | null>(mockOfficials);
+  const [officials, setOfficials] = useState<Official[] | null>(null);
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<{ city?: string; state?: string }>({ city: "San Francisco", state: "California" });

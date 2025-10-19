@@ -6,7 +6,8 @@ A web app that makes it simple for citizens to contact their representatives wit
 
 ## Features
 
-- **Officials Lookup**: Find all elected officials (local → federal) for any U.S. address using the Google Civic Information API
+- **Officials Lookup**: Find all elected officials (local → federal) for any U.S. address using the 5 Calls API
+- **Comprehensive Coverage**: Includes federal (House, Senate), state (Governor, AG, Sec of State, legislators), and local officials
 - **Issue Selection**: Choose from common issues or enter your own, with support/oppose stance
 - **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
 - **Contact Paths**: Direct links to email, phone, and official websites
@@ -17,7 +18,7 @@ A web app that makes it simple for citizens to contact their representatives wit
 
 - **Framework**: Next.js 14 (App Router) + TypeScript
 - **Styling**: Tailwind CSS
-- **APIs**: Google Civic Information API + OpenAI
+- **APIs**: 5 Calls API (no auth required) + OpenAI
 - **Validation**: Zod
 - **Deployment**: Vercel-ready
 
@@ -26,7 +27,6 @@ A web app that makes it simple for citizens to contact their representatives wit
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Google Cloud account (for Civic Information API)
 - OpenAI account (for GPT-4o-mini)
 
 ### 1. Clone and Install
@@ -45,14 +45,7 @@ Copy the example environment file:
 cp .env.local.example .env.local
 ```
 
-Then add your API keys to `.env.local`:
-
-**Google Civic Information API:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or select existing)
-3. Enable "Google Civic Information API" in APIs & Services
-4. Create credentials → API Key
-5. Copy the key to `GOOGLE_CIVIC_API_KEY`
+Then add your API key to `.env.local`:
 
 **OpenAI API:**
 1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
@@ -107,8 +100,7 @@ Then:
 
 1. Push your code to GitHub
 2. Import your repository in [Vercel](https://vercel.com)
-3. Add environment variables in Vercel dashboard:
-   - `GOOGLE_CIVIC_API_KEY`
+3. Add environment variable in Vercel dashboard:
    - `OPENAI_API_KEY`
 4. Deploy
 

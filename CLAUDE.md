@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Civic Action MVP is a Next.js 14 web app that helps citizens contact their elected officials. Users enter an address, select an issue/stance, and receive AI-generated email drafts for every official from local to federal level.
 
-**Key Flow**: Address → Officials Lookup (Google Civic API) → Issue Selection → AI Draft Generation (OpenAI) → Contact Methods
+**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection → AI Draft Generation (OpenAI) → Contact Methods
 
 ## Development Commands
 
@@ -26,8 +26,8 @@ npm run lint         # Run ESLint
 
 ### Data Flow Pattern
 1. **Client**: User enters address in `AddressForm.tsx`
-2. **API Route** (`/api/reps/route.ts`): Calls Google Civic Information API
-3. **Mapper** (`lib/civic.ts`): Transforms Google's response into `OfficialContact[]`
+2. **API Route** (`/api/reps/route.ts`): Calls 5 Calls API (no auth required)
+3. **Mapper** (`lib/civic.ts`): Transforms 5 Calls response into `OfficialContact[]`
 4. **Client**: User selects issue in `IssuePicker.tsx`, sees officials in `OfficialsList.tsx`
 5. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
 6. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
@@ -66,7 +66,7 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
 ```
 /app
   /api
-    /reps/route.ts          # Officials lookup (Google Civic API)
+    /reps/route.ts          # Officials lookup (5 Calls API)
     /ai/draft/route.ts      # Email draft generation (OpenAI)
   /actions
     draftEmail.ts           # Core AI drafting logic
@@ -76,7 +76,7 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     OfficialCard.tsx        # Individual official with draft UI
     OfficialsList.tsx       # Manages drafts state for all officials
   /lib
-    civic.ts                # Maps Google Civic API → OfficialContact[]
+    civic.ts                # Maps 5 Calls API → OfficialContact[]
     mailto.ts               # Generates mailto: URLs
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
@@ -86,9 +86,10 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
 ## Environment Variables
 
 Required in `.env.local`:
-- `GOOGLE_CIVIC_API_KEY` - Google Civic Information API key
 - `OPENAI_API_KEY` - OpenAI API key
 - `APP_BASE_URL` - Base URL (optional, mainly for development)
+
+**Note**: The 5 Calls API requires no authentication, so no API key is needed for officials lookup.
 
 See `.env.local.example` for setup instructions.
 
@@ -102,10 +103,16 @@ See `.env.local.example` for setup instructions.
 
 ## API Integration Notes
 
-**Google Civic Information API** (`lib/civic.ts`):
-- Returns nested structure: `offices[]` with `officialIndices[]` pointing into `officials[]`
-- Mapper flattens this into a simple `OfficialContact[]` array
-- Each official gets `role` from office name, `level` from office levels
+**5 Calls API** (`lib/civic.ts`):
+- Public API endpoint: `https://api.5calls.org/v1/reps?location=<address>`
+- No authentication required
+- Returns flat structure with `representatives[]` array
+- Response includes: location, state, district, lowAccuracy flag
+- Each representative includes: id, name, phone, photoURL, party, state, reason, area, field_offices[]
+- Mapper (`mapFiveCallsToOfficials`) transforms this into `OfficialContact[]`
+- Collects all phone numbers (main + field offices)
+- Note: 5 Calls API does not provide email addresses (emails array will be empty)
+- Coverage: Federal (House, Senate), State (Governor, AG, Sec of State, legislators)
 
 **OpenAI API** (`actions/draftEmail.ts`):
 - Uses `gpt-4o-mini` with temperature 0.3
@@ -148,7 +155,8 @@ TypeScript strict mode enabled. Import paths use `@/*` alias pointing to project
 ## Known Limitations (MVP Scope)
 
 - In-memory rate limiting (not shared across serverless instances)
+- No email addresses for officials (5 Calls API limitation)
 - No bill context fetching (planned for post-MVP)
 - No analytics or tracking (planned for post-MVP)
 - No phone script generation (planned for post-MVP)
-- Limited to U.S. addresses (Google Civic API constraint)
+- Limited to U.S. addresses (5 Calls API constraint)
