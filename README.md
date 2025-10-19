@@ -1,8 +1,8 @@
 # Civic Action MVP
 
-**Turn any address into real civic action in under a minute.**
+**Empowering effective civic action through streamlined communication between constituents and their elected officials.**
 
-A simple web app that helps people contact their elected officials with personalized, respectful messages. Enter an address, pick an issue, and get a ready-to-send email draft for every official from local to federal level.
+A web app that makes it simple for citizens to contact their representatives with well-crafted, respectful messages. Enter an address, pick an issue, and get a ready-to-send email draft for every official from local to federal level—enabling meaningful dialogue that strengthens democracy.
 
 ## Features
 
