@@ -9,12 +9,13 @@ type Official = {
 
 export default function OfficialsList({ officials, issue, location }: {
   officials: Official[];
-  issue: Issue;
+  issue: Issue | null;
   location?: { city?: string; state?: string };
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   async function draftFor(official: Official) {
+    if (!issue) return; // Safety check
     const r = await fetch("/api/ai/draft", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -32,6 +33,7 @@ export default function OfficialsList({ officials, issue, location }: {
           official={o}
           draft={drafts[o.name + o.role]}
           onDraft={() => draftFor(o)}
+          hasIssue={!!issue}
         />
       ))}
     </div>

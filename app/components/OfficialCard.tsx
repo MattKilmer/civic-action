@@ -15,13 +15,15 @@ type Props = {
   };
   draft?: string;
   onDraft: () => Promise<void>;
+  hasIssue?: boolean;
 };
 
-export default function OfficialCard({ official, draft, onDraft }: Props) {
+export default function OfficialCard({ official, draft, onDraft, hasIssue = false }: Props) {
   const [busy, setBusy] = useState(false);
   const email = official.emails?.[0];
   const subject = `Constituent regarding ${official.role}`;
   const mailto = email && draft ? mailtoHref(email, subject, draft) : undefined;
+  const canDraft = hasIssue && !draft;
 
   // Generate initials for photo fallback
   const initials = official.name
@@ -89,20 +91,30 @@ export default function OfficialCard({ official, draft, onDraft }: Props) {
 
       {/* Draft Actions */}
       <div className="flex flex-wrap gap-2">
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await onDraft();
-            } finally {
-              setBusy(false);
-            }
-          }}
-          disabled={busy || !!draft}
-        >
-          {busy ? "Drafting…" : draft ? "✓ Draft generated" : "Draft email"}
-        </button>
+        <div className="relative group">
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
+            onClick={async () => {
+              if (!hasIssue) return;
+              setBusy(true);
+              try {
+                await onDraft();
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy || !!draft || !hasIssue}
+            title={!hasIssue ? "Select an issue above to draft an email" : undefined}
+          >
+            {busy ? "Drafting…" : draft ? "✓ Draft generated" : "Draft email"}
+          </button>
+          {!hasIssue && !draft && (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+              ⬆ Select an issue above first
+              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+            </div>
+          )}
+        </div>
         {mailto && (
           <a
             className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"

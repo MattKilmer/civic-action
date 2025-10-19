@@ -107,14 +107,14 @@ export default function Page() {
             </h2>
           </div>
 
-          {officials && issue && (
+          {officials && officials.length > 0 && (
             <OfficialsList officials={officials} issue={issue} location={location || undefined} />
           )}
 
-          {officials && !loading && !issue && (
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
-              <p className="text-blue-900 font-medium">
-                👆 Select an issue and stance above to start drafting emails to your representatives.
+          {officials && officials.length === 0 && !loading && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+              <p className="text-amber-900 font-medium">
+                No officials found for this location. Please try a different address.
               </p>
             </div>
           )}
