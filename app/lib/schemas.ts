@@ -11,6 +11,7 @@ export const IssueDraftSchema = z.object({
   topic: z.string().min(2).max(80),
   bill: z.string().optional(),
   billTitle: z.string().optional(),
+  billSummary: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   personalImpact: z.string().max(300).optional(),

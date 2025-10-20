@@ -12,6 +12,7 @@ interface Bill {
   date: string;
   type: string;
   congress: number;
+  summary?: string;
 }
 
 const BILL_TYPES = [
@@ -47,6 +48,8 @@ export default function BillExplorerPage() {
   const [displayLimit, setDisplayLimit] = useState(50);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedBillNumber, setExpandedBillNumber] = useState<string | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
   // Filter bills by status on client side
@@ -127,12 +130,53 @@ export default function BillExplorerPage() {
   const totalFiltered = filterByStatus(bills).length;
   const canLoadMore = totalFiltered > displayLimit;
 
-  const handleUseBill = (billNumber: string, billTitle: string) => {
-    // Navigate to homepage with bill number and title pre-filled
+  const handleUseBill = (bill: Bill) => {
+    // Navigate to homepage with bill number, title, congress, and type pre-filled
+    // This allows fetching the bill summary for better AI context
     const params = new URLSearchParams();
-    params.set('bill', billNumber);
-    params.set('billTitle', billTitle);
+    params.set('bill', bill.number);
+    params.set('billTitle', bill.title);
+    params.set('billCongress', bill.congress.toString());
+    params.set('billType', bill.type);
     window.location.href = `/?${params.toString()}`;
+  };
+
+  const toggleBillSummary = async (bill: Bill) => {
+    // If clicking the same bill, collapse it
+    if (expandedBillNumber === bill.number) {
+      setExpandedBillNumber(null);
+      return;
+    }
+
+    // If bill already has summary, just expand it
+    if (bill.summary) {
+      setExpandedBillNumber(bill.number);
+      return;
+    }
+
+    // Fetch the summary
+    setExpandedBillNumber(bill.number);
+    setLoadingSummary(bill.number);
+
+    try {
+      const billNum = bill.number.split(' ')[1];
+      const res = await fetch(`/api/bills/${bill.congress}/${bill.type}/${billNum}`);
+      if (res.ok) {
+        const details = await res.json();
+        if (details.summary) {
+          // Update the bill in the bills array with the summary
+          setBills(prevBills =>
+            prevBills.map(b =>
+              b.number === bill.number ? { ...b, summary: details.summary } : b
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch bill summary:', error);
+    } finally {
+      setLoadingSummary(null);
+    }
   };
 
   const getCongressUrl = (bill: Bill) => {
@@ -378,9 +422,49 @@ export default function BillExplorerPage() {
                   </div>
 
                   {/* Title */}
-                  <h4 className="text-sm font-medium text-gray-900 mb-3 line-clamp-3">
+                  <h4 className="text-sm font-medium text-gray-900 mb-2 line-clamp-3">
                     {bill.title}
                   </h4>
+
+                  {/* View Summary Link - Subtle, tertiary action */}
+                  <button
+                    onClick={() => toggleBillSummary(bill)}
+                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {expandedBillNumber === bill.number ? 'Hide summary' : 'View summary'}
+                    <svg
+                      className={`w-3 h-3 transition-transform ${expandedBillNumber === bill.number ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Summary Display */}
+                  {expandedBillNumber === bill.number && (
+                    <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      {loadingSummary === bill.number ? (
+                        <div className="flex items-center gap-2 text-blue-900">
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm font-medium">Loading summary...</span>
+                        </div>
+                      ) : bill.summary ? (
+                        <div className="text-sm text-gray-700 leading-relaxed max-h-60 overflow-y-auto pr-2 custom-scrollbar" style={{ lineHeight: '1.6' }}>
+                          {bill.summary}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600 italic">No summary available for this bill.</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Status */}
                   <div className="mb-4">
@@ -399,7 +483,7 @@ export default function BillExplorerPage() {
 
                   {/* Primary Action Button */}
                   <button
-                    onClick={() => handleUseBill(bill.number, bill.title)}
+                    onClick={() => handleUseBill(bill)}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition-colors"
                   >
                     Use this bill
@@ -447,6 +531,7 @@ export default function BillExplorerPage() {
             <li>• <strong>Search:</strong> Find bills by number (e.g., &quot;HR 1234&quot;) or keywords (e.g., &quot;climate&quot;)</li>
             <li>• <strong>Filter by status:</strong> Focus on active bills, enacted laws, or bills at specific stages</li>
             <li>• <strong>Filter by type:</strong> House bills, Senate bills, or joint resolutions</li>
+            <li>• <strong>View Summary:</strong> Click to read the official bill summary from Congress.gov</li>
             <li>• <strong>Select a bill:</strong> Click &quot;Use this bill&quot; to automatically fill it into your letter</li>
             <li>• <strong>Note:</strong> Showing recent bills from 118th Congress ({TOTAL_BILLS_118TH.toLocaleString()} total). Use search to find any specific bill.</li>
           </ul>

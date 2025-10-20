@@ -29,6 +29,7 @@ export type Issue = {
   topic: string;
   bill?: string;
   billTitle?: string;
+  billSummary?: string;
   personalImpact?: string;
   desiredAction?: string;
   tone?: "neutral" | "urgent" | "friendly";
@@ -40,12 +41,16 @@ interface BillSuggestion {
   titleShort: string;
   status: string;
   date: string;
+  type: string;
+  congress: number;
 }
 
 interface IssuePickerProps {
   onChange: (v: Issue) => void;
   initialBillNumber?: string | null;
   initialBillTitle?: string | null;
+  initialBillCongress?: string | null;
+  initialBillType?: string | null;
 }
 
 /**
@@ -107,7 +112,7 @@ function mapBillTitleToTopic(billTitle: string): string {
   return "OTHER";
 }
 
-export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle }: IssuePickerProps) {
+export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillCongress, initialBillType }: IssuePickerProps) {
   const [issue, setIssue] = useState<Issue>({
     stance: "support",
     topic: DEFAULT_TOPICS[0],
@@ -118,6 +123,8 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   const [billQuery, setBillQuery] = useState("");
   const [billSuggestions, setBillSuggestions] = useState<BillSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
   // Pre-fill bill number and auto-detect topic from bill title
@@ -143,12 +150,31 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
       }
 
       update("bill", initialBillNumber);
+
+      // Fetch bill summary if we have congress and type info
+      if (initialBillCongress && initialBillType) {
+        setLoadingSummary(true);
+        fetchBillDetails(
+          parseInt(initialBillCongress),
+          initialBillType,
+          initialBillNumber
+        ).then((summary) => {
+          if (summary) {
+            update("billSummary", summary);
+          }
+          setLoadingSummary(false);
+        }).catch(() => {
+          setLoadingSummary(false);
+        });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialBillNumber, initialBillTitle]);
+  }, [initialBillNumber, initialBillTitle, initialBillCongress, initialBillType]);
 
   function update<K extends keyof Issue>(k: K, v: Issue[K]) {
     const next = { ...issue, [k]: v };
+    console.log(`[IssuePicker.update] Setting ${k} =`, v);
+    console.log(`[IssuePicker.update] New issue state:`, { ...next, billSummary: next.billSummary ? `${next.billSummary.substring(0, 30)}...` : undefined });
     setIssue(next);
     onChange(next);
   }
@@ -170,6 +196,28 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
     if (selectedTopicValue === "OTHER") {
       update("topic", value);
     }
+  }
+
+  // Fetch bill details including summary
+  async function fetchBillDetails(congress: number, type: string, billNumber: string) {
+    try {
+      // Extract just the numeric part from bill number (e.g., "HR 1234" -> "1234")
+      const numericPart = billNumber.replace(/[A-Z\s]/gi, '').trim();
+      console.log(`[IssuePicker] Fetching bill summary: congress=${congress}, type=${type}, input="${billNumber}", extracted="${numericPart}"`);
+      const url = `/api/bills/${congress}/${type}/${numericPart}`;
+      console.log(`[IssuePicker] Fetching from: ${url}`);
+      const res = await fetch(url);
+      if (res.ok) {
+        const details = await res.json();
+        console.log(`[IssuePicker] Got summary:`, details.summary?.substring(0, 100));
+        return details.summary;
+      } else {
+        console.error(`[IssuePicker] Bill details fetch failed: ${res.status} ${res.statusText}`);
+      }
+    } catch (error) {
+      console.error('[IssuePicker] Bill details fetch error:', error);
+    }
+    return null;
   }
 
   // Debounced bill search
@@ -265,6 +313,53 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         </div>
       )}
 
+      {/* Bill Summary Display */}
+      {loadingSummary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-blue-900">
+            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-sm font-medium">Loading bill summary...</span>
+          </div>
+        </div>
+      )}
+
+      {!loadingSummary && issue.billSummary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setSummaryExpanded(!summaryExpanded)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="font-semibold text-blue-900 text-sm">
+                Bill Summary
+              </h3>
+            </div>
+            <svg
+              className={`w-4 h-4 text-blue-700 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {summaryExpanded && (
+            <div className="px-4 pb-4 pt-2">
+              <div className="text-sm text-gray-700 max-h-60 overflow-y-auto pr-2 custom-scrollbar" style={{ lineHeight: '1.6' }}>
+                {issue.billSummary}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Optional Fields */}
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="relative">
@@ -297,11 +392,24 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                   key={bill.number}
                   type="button"
                   className="w-full px-3 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
-                  onClick={() => {
+                  onClick={async () => {
                     setBillQuery(bill.number);
                     update("bill", bill.number);
                     update("billTitle", bill.title);
                     setShowSuggestions(false);
+
+                    // Fetch bill summary for better AI context
+                    setLoadingSummary(true);
+                    try {
+                      const summary = await fetchBillDetails(bill.congress, bill.type, bill.number.toString());
+                      if (summary) {
+                        update("billSummary", summary);
+                      }
+                    } catch (error) {
+                      console.error('Failed to fetch bill summary:', error);
+                    } finally {
+                      setLoadingSummary(false);
+                    }
 
                     // Auto-detect topic from bill title
                     const detectedTopic = mapBillTitleToTopic(bill.title);

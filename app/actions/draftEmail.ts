@@ -7,11 +7,14 @@ function systemPrompt() {
     "You draft concise, respectful constituent emails to public officials.",
     "Rules:",
     "- 150–220 words.",
-    "- 1 opening paragraph stating locality & stance.",
-    "- Then 2–3 short bullets with reasons (no more than one clause each).",
-    "- Include any bill number exactly as provided (no fabrication).",
-    "- When a bill title is provided, ensure the email is specifically about that bill's content and purpose.",
-    "- Close with a clear ask and request for a written response.",
+    "- Opening paragraph: State locality, mention the SPECIFIC BILL NUMBER AND TITLE, and your stance on it.",
+    "- Then 2–3 short bullets explaining why based on what the bill actually does.",
+    "- CRITICAL: When bill information is provided, you MUST:",
+    "  * Explicitly mention the bill number and title in your opening paragraph",
+    "  * Write ONLY about what that specific bill does (based on the summary provided)",
+    "  * Do NOT write about general topics - be specific to this legislation",
+    "- If no bill is provided, write about the general topic.",
+    "- Close with a clear ask (e.g., 'I urge you to support/oppose [BILL NUMBER]') and request for a written response.",
     "- Tone: calm, civil, professional. No insults, no threats.",
   ].join("\n");
 }
@@ -21,31 +24,61 @@ function userPrompt(input: IssueDraftInput, official?: OfficialContact) {
   const city = input.city ? ` in ${input.city}` : "";
   const state = input.state ? (input.city ? `, ${input.state}` : ` in ${input.state}`) : "";
 
-  // Include both bill number and title for better context
-  let billLine = "";
-  if (input.bill) {
-    billLine = `Bill: ${input.bill}`;
-    if (input.billTitle) {
-      billLine += ` - ${input.billTitle}`;
-    }
-    billLine += "\n";
-  }
-
   const impact = input.personalImpact ? `Personal impact: ${input.personalImpact}\n` : "";
   const ask = input.desiredAction ? `Desired action: ${input.desiredAction}\n` : "";
-  return [
-    `Recipient: ${who}`,
-    `Constituent stance: ${input.stance.toUpperCase()} — Topic: ${input.topic}`,
-    billLine + impact + ask,
-    `Jurisdiction: I am a resident${city}${state}.`,
-    `Tone: ${input.tone ?? "neutral"}`,
-  ].join("\n");
+
+  // Build bill information section - prioritize summary when available
+  const parts: string[] = [`Recipient: ${who}`];
+
+  // Check for bill summary first - even if bill number is missing, the summary is what matters!
+  if (input.billSummary) {
+    // BILL-SPECIFIC EMAIL: Put bill info FIRST to make it the primary focus
+    const billHeader = input.bill
+      ? `${input.bill}${input.billTitle ? ` - ${input.billTitle}` : ""}`
+      : (input.billTitle || "Specific Legislation");
+
+    parts.push(`BILL-SPECIFIC REQUEST: ${billHeader}`);
+    parts.push(`WHAT THIS BILL DOES: ${input.billSummary}`);
+    parts.push(`Constituent stance: ${input.stance.toUpperCase()} this bill`);
+    if (impact) parts.push(impact.trim());
+    if (ask) parts.push(ask.trim());
+    parts.push(`Jurisdiction: I am a resident${city}${state}.`);
+    parts.push(`Tone: ${input.tone ?? "neutral"}`);
+  } else if (input.bill) {
+    // Has bill number but no summary - still bill-focused
+    parts.push(`BILL: ${input.bill}${input.billTitle ? ` - ${input.billTitle}` : ""}`);
+    parts.push(`Constituent stance: ${input.stance.toUpperCase()} — Topic: ${input.topic}`);
+    if (impact) parts.push(impact.trim());
+    if (ask) parts.push(ask.trim());
+    parts.push(`Jurisdiction: I am a resident${city}${state}.`);
+    parts.push(`Tone: ${input.tone ?? "neutral"}`);
+  } else {
+    // No bill - general topic-based email
+    parts.push(`Constituent stance: ${input.stance.toUpperCase()} — Topic: ${input.topic}`);
+    if (impact) parts.push(impact.trim());
+    if (ask) parts.push(ask.trim());
+    parts.push(`Jurisdiction: I am a resident${city}${state}.`);
+    parts.push(`Tone: ${input.tone ?? "neutral"}`);
+  }
+
+  return parts.join("\n");
 }
 
 export async function draftEmail(inputRaw: unknown, official?: OfficialContact) {
   const parse = IssueDraftSchema.safeParse(inputRaw);
   if (!parse.success) throw new Error("Invalid input");
   const input = parse.data;
+
+  console.log('[draftEmail] Input data:', {
+    bill: input.bill,
+    billTitle: input.billTitle,
+    billSummary: input.billSummary ? `${input.billSummary.substring(0, 50)}...` : 'NONE',
+    topic: input.topic,
+    stance: input.stance
+  });
+
+  const prompt = userPrompt(input, official);
+  console.log('[draftEmail] User prompt:\n', prompt);
 
   // OpenAI implementation using gpt-4o-mini
   const r = await fetch("https://api.openai.com/v1/chat/completions", {

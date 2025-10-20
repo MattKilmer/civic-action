@@ -23,6 +23,8 @@ function PageContent() {
   const [location, setLocation] = useState<{ city?: string; state?: string; district?: string } | null>(null);
   const [initialBillNumber, setInitialBillNumber] = useState<string | null>(null);
   const [initialBillTitle, setInitialBillTitle] = useState<string | null>(null);
+  const [initialBillCongress, setInitialBillCongress] = useState<string | null>(null);
+  const [initialBillType, setInitialBillType] = useState<string | null>(null);
   const addressFormRef = useRef<HTMLElement>(null);
   const issuePickerRef = useRef<HTMLElement>(null);
 
@@ -51,11 +53,19 @@ function PageContent() {
   useEffect(() => {
     const billParam = searchParams.get('bill');
     const titleParam = searchParams.get('billTitle');
+    const congressParam = searchParams.get('billCongress');
+    const typeParam = searchParams.get('billType');
 
     if (billParam) {
       setInitialBillNumber(billParam);
       if (titleParam) {
         setInitialBillTitle(titleParam);
+      }
+      if (congressParam) {
+        setInitialBillCongress(congressParam);
+      }
+      if (typeParam) {
+        setInitialBillType(typeParam);
       }
       // Small delay to ensure DOM is ready
       setTimeout(() => {
@@ -138,7 +148,13 @@ function PageContent() {
               Choose your issue & stance
             </h2>
           </div>
-          <IssuePicker onChange={(v) => setIssue(v)} initialBillNumber={initialBillNumber} initialBillTitle={initialBillTitle} />
+          <IssuePicker
+            onChange={(v) => setIssue(v)}
+            initialBillNumber={initialBillNumber}
+            initialBillTitle={initialBillTitle}
+            initialBillCongress={initialBillCongress}
+            initialBillType={initialBillType}
+          />
         </section>
 
         {/* Officials List Section */}
