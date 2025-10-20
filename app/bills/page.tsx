@@ -397,26 +397,26 @@ export default function BillExplorerPage() {
                     </p>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => handleUseBill(bill.number, bill.title)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition-colors"
-                    >
-                      Use this bill
-                    </button>
-                    <a
-                      href={getCongressUrl(bill)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium py-2 transition-colors"
-                    >
-                      Read full text
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  </div>
+                  {/* Primary Action Button */}
+                  <button
+                    onClick={() => handleUseBill(bill.number, bill.title)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition-colors"
+                  >
+                    Use this bill
+                  </button>
+
+                  {/* Secondary Link - Subtle */}
+                  <a
+                    href={getCongressUrl(bill)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    View on Congress.gov
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                 </div>
               ))}
             </div>
