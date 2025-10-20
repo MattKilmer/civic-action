@@ -8,6 +8,7 @@ import AddressForm from "./components/AddressForm";
 import LocationStatus from "./components/LocationStatus";
 import IssuePicker, { type Issue } from "./components/IssuePicker";
 import OfficialsList from "./components/OfficialsList";
+import { loadSession, saveSession, clearSession } from "./lib/sessionStorage";
 
 type Official = {
   name: string; role: string; party?: string; phones: string[]; emails: string[]; urls: string[]; photoUrl?: string; primaryUrl?: string;
@@ -24,6 +25,27 @@ function PageContent() {
   const [initialBillTitle, setInitialBillTitle] = useState<string | null>(null);
   const addressFormRef = useRef<HTMLElement>(null);
   const issuePickerRef = useRef<HTMLElement>(null);
+
+  // Load session data on mount
+  useEffect(() => {
+    const session = loadSession();
+    if (session) {
+      setSubmittedAddress(session.address);
+      setOfficials(session.officials);
+      setLocation(session.location);
+    }
+  }, []);
+
+  // Save session data whenever address, officials, or location changes
+  useEffect(() => {
+    if (submittedAddress && officials) {
+      saveSession({
+        address: submittedAddress,
+        officials,
+        location,
+      });
+    }
+  }, [submittedAddress, officials, location]);
 
   // Check for bill number and title in URL params and scroll to issue picker
   useEffect(() => {
@@ -67,7 +89,8 @@ function PageContent() {
   }
 
   function handleEditAddress() {
-    // Reset state and scroll to address form
+    // Clear session storage and reset state
+    clearSession();
     setSubmittedAddress(null);
     setOfficials(null);
     setLocation(null);

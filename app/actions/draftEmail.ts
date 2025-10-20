@@ -10,6 +10,7 @@ function systemPrompt() {
     "- 1 opening paragraph stating locality & stance.",
     "- Then 2–3 short bullets with reasons (no more than one clause each).",
     "- Include any bill number exactly as provided (no fabrication).",
+    "- When a bill title is provided, ensure the email is specifically about that bill's content and purpose.",
     "- Close with a clear ask and request for a written response.",
     "- Tone: calm, civil, professional. No insults, no threats.",
   ].join("\n");
@@ -19,7 +20,17 @@ function userPrompt(input: IssueDraftInput, official?: OfficialContact) {
   const who = official ? `${official.role} ${official.name}` : "my representative";
   const city = input.city ? ` in ${input.city}` : "";
   const state = input.state ? (input.city ? `, ${input.state}` : ` in ${input.state}`) : "";
-  const billLine = input.bill ? `Bill: ${input.bill}\n` : "";
+
+  // Include both bill number and title for better context
+  let billLine = "";
+  if (input.bill) {
+    billLine = `Bill: ${input.bill}`;
+    if (input.billTitle) {
+      billLine += ` - ${input.billTitle}`;
+    }
+    billLine += "\n";
+  }
+
   const impact = input.personalImpact ? `Personal impact: ${input.personalImpact}\n` : "";
   const ask = input.desiredAction ? `Desired action: ${input.desiredAction}\n` : "";
   return [

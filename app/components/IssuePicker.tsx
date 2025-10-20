@@ -28,6 +28,7 @@ export type Issue = {
   stance: "support" | "oppose";
   topic: string;
   bill?: string;
+  billTitle?: string;
   personalImpact?: string;
   desiredAction?: string;
   tone?: "neutral" | "urgent" | "friendly";
@@ -136,6 +137,9 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
           setSelectedTopicValue(detectedTopic);
           update("topic", detectedTopic);
         }
+
+        // Store bill title for AI context
+        update("billTitle", initialBillTitle);
       }
 
       update("bill", initialBillNumber);
@@ -296,6 +300,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                   onClick={() => {
                     setBillQuery(bill.number);
                     update("bill", bill.number);
+                    update("billTitle", bill.title);
                     setShowSuggestions(false);
 
                     // Auto-detect topic from bill title
