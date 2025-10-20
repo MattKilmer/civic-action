@@ -16,10 +16,11 @@ export default function OfficialsList({ officials, issue, location }: {
 
   async function draftFor(official: Official) {
     if (!issue) return; // Safety check
+    const input = { ...issue, ...location };
     const r = await fetch("/api/ai/draft", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ input: { ...issue, ...location }, official }),
+      body: JSON.stringify({ input, official }),
     });
     const json = await r.json();
     if (json.text) setDrafts((d) => ({ ...d, [official.name + official.role]: json.text }));

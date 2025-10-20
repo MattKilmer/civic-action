@@ -128,6 +128,11 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   const debounceTimer = useRef<NodeJS.Timeout>();
   const isAutoDetectingRef = useRef(false); // Track if we're auto-detecting topic from bill
 
+  // Call onChange whenever issue state changes
+  useEffect(() => {
+    onChange(issue);
+  }, [issue, onChange]);
+
   // Pre-fill bill number and auto-detect topic from bill title
   useEffect(() => {
     if (initialBillNumber) {
@@ -177,11 +182,12 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   }, [initialBillNumber, initialBillTitle, initialBillCongress, initialBillType]);
 
   function update<K extends keyof Issue>(k: K, v: Issue[K]) {
-    const next = { ...issue, [k]: v };
     console.log(`[IssuePicker.update] Setting ${k} =`, v);
-    console.log(`[IssuePicker.update] New issue state:`, { ...next, billSummary: next.billSummary ? `${next.billSummary.substring(0, 30)}...` : undefined });
-    setIssue(next);
-    onChange(next);
+    setIssue(prev => {
+      const next = { ...prev, [k]: v };
+      console.log(`[IssuePicker.update] New issue state:`, { ...next, billSummary: next.billSummary ? `${next.billSummary.substring(0, 30)}...` : undefined });
+      return next;
+    });
   }
 
   function handleTopicChange(value: string) {
@@ -194,11 +200,15 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
     // Only clear bill fields if user is MANUALLY changing topic (not auto-detection)
     if (!isAutoDetectingRef.current) {
       console.log('[IssuePicker.handleTopicChange] MANUAL topic change - clearing bill fields (bill, billTitle, billSummary) and setting new topic');
-      // Clear bill-related fields AND set new topic in ONE update
+      // Clear bill-related fields AND set new topic in ONE update using functional setState
       setBillQuery("");
-      const next = { ...issue, bill: undefined, billTitle: undefined, billSummary: undefined, topic: newTopic };
-      setIssue(next);
-      onChange(next);
+      setIssue(prev => ({
+        ...prev,
+        bill: undefined,
+        billTitle: undefined,
+        billSummary: undefined,
+        topic: newTopic
+      }));
       setSummaryExpanded(true); // Reset summary expansion state
     } else {
       console.log('[IssuePicker.handleTopicChange] AUTO-DETECTING from bill - preserving bill fields, only updating topic');
