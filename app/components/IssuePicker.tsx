@@ -1,13 +1,20 @@
 "use client";
 import { useState } from "react";
 
+// Research-backed top 10 issues for young voters (2024-2025 data)
+// Based on Harvard Youth Poll, Pew Research, and AP-NORC polling
+// Ordered by salience and importance to 18-35 demographic
 const DEFAULT_TOPICS = [
-  "Public safety",
-  "Education funding",
-  "Transit & infrastructure",
-  "Healthcare access",
-  "Housing affordability",
-  "Environment & climate",
+  "Climate Change & Environmental Policy",
+  "Economy, Jobs & Wages",
+  "Housing Affordability & Rent Costs",
+  "Healthcare Access & Costs",
+  "Gun Policy & Community Safety",
+  "Reproductive Rights & Abortion Access",
+  "Education Costs & Student Debt",
+  "Immigration & Border Policy",
+  "Criminal Justice & Police Reform",
+  "Voting Rights & Election Integrity",
 ];
 
 export type Issue = {
