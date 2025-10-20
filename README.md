@@ -11,14 +11,18 @@ A web app that makes it simple for citizens to contact their representatives wit
 ### Core Functionality
 - **Officials Lookup**: Find elected officials (state → federal) for any U.S. address using the 5 Calls API
 - **Comprehensive Coverage**: Includes federal (House, Senate) and state (Governor, AG, Sec of State, legislators)
+- **Bill Explorer**: Dedicated page to browse and search federal legislation with status filtering (active, enacted, passed house/senate, introduced), Load More pagination, and direct links to official bill text on Congress.gov
 - **Research-Backed Issues**: Top 10 issues for young voters based on Harvard Youth Poll, Pew Research, and AP-NORC data
-- **Issue Selection**: Choose from curated issues or enter your own, with support/oppose stance
-- **Bill Autocomplete**: Search Congress.gov API for federal bills by number or title (e.g., "HR 1234" or "climate")
+- **Smart Topic Selection**: Dropdown menu with intelligent auto-detection—select a bill and the topic is automatically filled based on bill content. "Other" option reveals a custom field only when needed
+- **Bill Search & Autocomplete**: Search Congress.gov API for federal bills by number or title (e.g., "HR 1234" or "climate") with inline autocomplete or via dedicated Bill Explorer page
+- **Seamless Bill Integration**: Select a bill from the explorer and return to homepage with bill number and topic pre-filled automatically
 - **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
 - **Contact Paths**: Direct links to email, phone, and official websites
 - **Privacy-First**: No address storage, no auto-sending—users maintain full control
 
 ### Pages & Information
+- **Homepage**: Address lookup, issue selection, officials list, and email drafting
+- **Bill Explorer** (`/bills`): Browse and search federal legislation with filters and status tracking
 - **About Page**: How it works, mission, research-backed impact data (CMF studies)
 - **Privacy Policy**: Comprehensive transparency on data practices (we never store addresses or positions)
 
@@ -104,6 +108,9 @@ Then:
 /app
   /about
     page.tsx                # About page (How It Works)
+  /bills
+    page.tsx                # Bill Explorer page with search/filters
+    layout.tsx              # SEO metadata for bill explorer
   /privacy
     page.tsx                # Privacy Policy page
   /api
@@ -117,7 +124,7 @@ Then:
     Footer.tsx              # Professional footer with commitments
     AddressForm.tsx         # Address input
     LocationStatus.tsx      # Address submission feedback
-    IssuePicker.tsx         # Issue & stance selection (with bill autocomplete)
+    IssuePicker.tsx         # Issue & stance selection with dropdown + auto-topic detection
     OfficialCard.tsx        # Single official display
     OfficialsList.tsx       # Officials grid with draft management
   /lib
@@ -138,7 +145,8 @@ Then:
   IMPACT_ANALYSIS.md        # Research on civic action vs protests
   ISSUE_TOPICS.md           # Issue topic selection methodology
   SEO.md                    # SEO optimization guide
-  SESSION_SUMMARY.md        # Development session summaries
+  SESSION_SUMMARY.md        # Development session summaries (original)
+  SESSION_SUMMARY_2025-10-19_PART2.md  # Bill explorer & topic selection session
   /strategy                 # Strategic planning documents
 ```
 
@@ -168,7 +176,11 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
 ### ✅ Completed (Production)
 - [x] Officials lookup (5 Calls API)
 - [x] AI email drafting (OpenAI)
-- [x] Bill autocomplete (Congress.gov API)
+- [x] Bill search and autocomplete (Congress.gov API)
+- [x] Bill Explorer page with status filtering and Load More
+- [x] Smart topic selection dropdown with auto-detection
+- [x] Seamless bill selection flow (explorer → homepage pre-fill)
+- [x] Direct links to official bill text on Congress.gov
 - [x] About and Privacy pages
 - [x] SEO optimization (sitemap, robots.txt, structured data)
 - [x] Research-backed issue topics

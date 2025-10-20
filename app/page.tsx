@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import TopNav from "./components/TopNav";
 import Footer from "./components/Footer";
 import AddressForm from "./components/AddressForm";
@@ -13,12 +14,33 @@ type Official = {
 };
 
 export default function Page() {
+  const searchParams = useSearchParams();
   const [officials, setOfficials] = useState<Official[] | null>(null);
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(false);
   const [submittedAddress, setSubmittedAddress] = useState<string | null>(null);
   const [location, setLocation] = useState<{ city?: string; state?: string; district?: string } | null>(null);
+  const [initialBillNumber, setInitialBillNumber] = useState<string | null>(null);
+  const [initialBillTitle, setInitialBillTitle] = useState<string | null>(null);
   const addressFormRef = useRef<HTMLElement>(null);
+  const issuePickerRef = useRef<HTMLElement>(null);
+
+  // Check for bill number and title in URL params and scroll to issue picker
+  useEffect(() => {
+    const billParam = searchParams.get('bill');
+    const titleParam = searchParams.get('billTitle');
+
+    if (billParam) {
+      setInitialBillNumber(billParam);
+      if (titleParam) {
+        setInitialBillTitle(titleParam);
+      }
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        issuePickerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [searchParams]);
 
   async function fetchOfficials(address: string) {
     setLoading(true);
@@ -84,7 +106,7 @@ export default function Page() {
         )}
 
         {/* Issue Picker Section */}
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
+        <section ref={issuePickerRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
               1
@@ -93,7 +115,7 @@ export default function Page() {
               Choose your issue & stance
             </h2>
           </div>
-          <IssuePicker onChange={(v) => setIssue(v)} />
+          <IssuePicker onChange={(v) => setIssue(v)} initialBillNumber={initialBillNumber} initialBillTitle={initialBillTitle} />
         </section>
 
         {/* Officials List Section */}

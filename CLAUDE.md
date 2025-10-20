@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Civic Action MVP is a Next.js 14 web app that helps citizens contact their elected officials. Users enter an address, select an issue/stance, and receive AI-generated email drafts for every official from local to federal level.
 
-**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with Bill Autocomplete) → AI Draft Generation (OpenAI) → Contact Methods
+**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with Bill Autocomplete or Bill Explorer) → AI Draft Generation (OpenAI) → Contact Methods
+
+**Alternative Bill Explorer Flow**: Bill Explorer Page (`/bills`) → Search/Filter Bills → Select Bill → Homepage with Bill + Topic Pre-filled → Draft Generation
 
 **Production URL**: https://takecivicaction.org
 
@@ -27,17 +29,37 @@ npm run lint         # Run ESLint
 ## Architecture Overview
 
 ### Data Flow Pattern
+
+#### Main Flow (Homepage)
 1. **Client**: User enters address in `AddressForm.tsx`
 2. **API Route** (`/api/reps/route.ts`): Calls 5 Calls API (no auth required)
 3. **Mapper** (`lib/civic.ts`): Transforms 5 Calls response into `OfficialContact[]`
 4. **Client**: Officials displayed immediately in `OfficialsList.tsx` (with disabled draft buttons)
 5. **Client**: User selects issue in `IssuePicker.tsx`
-   - **Optional**: Types bill number/title → debounced search via `/api/bills/search` (Congress.gov API)
-   - **Optional**: Selects bill from autocomplete dropdown
+   - **Dropdown Selection**: Choose from 10 research-backed topics or "Other" (reveals custom field)
+   - **Optional Bill Search**: Types bill number/title → debounced search via `/api/bills/search` (Congress.gov API)
+   - **Optional Autocomplete**: Selects bill from autocomplete dropdown → topic auto-detected from bill title
 6. **Client**: Issue selection enables "Draft email" buttons
 7. **Client**: User clicks "Draft email" button on any official
 8. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
 9. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
+
+#### Bill Explorer Flow (Alternative Entry Point)
+1. **Client**: User visits `/bills` page
+2. **Client**: Searches/filters bills by:
+   - Search query (bill number or keywords)
+   - Status (Active, Enacted, Passed House/Senate, Introduced, All)
+   - Bill type (HR, S, HJRES, SJRES)
+   - Sort order (Most Recent, Oldest)
+3. **API Route** (`/api/bills/search`): Fetches 200 bills from Congress.gov API
+4. **Client**: Status filtering happens client-side (fast, no extra API calls)
+5. **Client**: User clicks "Use this bill" → navigates to `/?bill={number}&billTitle={title}`
+6. **Client**: Homepage detects URL params:
+   - Pre-fills bill number in `IssuePicker.tsx`
+   - Runs `mapBillTitleToTopic()` to auto-detect topic from bill title
+   - Pre-selects topic in dropdown (or "Other" if no keyword match)
+   - Scrolls to issue picker section
+7. **Client**: Continues from step 6 of Main Flow
 
 ### Key Architectural Decisions
 
@@ -74,12 +96,15 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
 /app
   /about
     page.tsx                # About / How It Works page
+  /bills
+    page.tsx                # Bill Explorer page with search/filters
+    layout.tsx              # SEO metadata for bill explorer
   /privacy
     page.tsx                # Privacy Policy page
   /api
     /reps/route.ts          # Officials lookup (5 Calls API)
     /ai/draft/route.ts      # Email draft generation (OpenAI)
-    /bills/search/route.ts  # Bill autocomplete (Congress.gov API)
+    /bills/search/route.ts  # Bill search API with type filtering (Congress.gov API)
   /actions
     draftEmail.ts           # Core AI drafting logic
   /components
@@ -87,7 +112,7 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     Footer.tsx              # Professional footer with commitments
     AddressForm.tsx         # Simple controlled input
     LocationStatus.tsx      # User feedback for address submission
-    IssuePicker.tsx         # Multi-field issue selector with bill autocomplete
+    IssuePicker.tsx         # Dropdown topic selector with auto-detection + bill autocomplete
     OfficialCard.tsx        # Individual official with draft UI
     OfficialsList.tsx       # Manages drafts state for all officials
   /lib
@@ -95,9 +120,9 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     mailto.ts               # Generates mailto: URLs
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
-  page.tsx                  # Main page with state coordination
+  page.tsx                  # Main page with state coordination + URL param handling
   layout.tsx                # Root layout with metadata and JSON-LD
-  sitemap.ts                # Auto-generated sitemap.xml
+  sitemap.ts                # Auto-generated sitemap.xml (includes /bills)
   robots.ts                 # Auto-generated robots.txt
   icon.svg                  # Favicon (capitol building)
   apple-icon.svg            # Apple touch icon
@@ -108,7 +133,8 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
   IMPACT_ANALYSIS.md        # Research: civic action vs protests
   ISSUE_TOPICS.md           # Issue selection methodology
   SEO.md                    # SEO optimization guide
-  SESSION_SUMMARY.md        # Development session summaries
+  SESSION_SUMMARY.md        # Development session summaries (original)
+  SESSION_SUMMARY_2025-10-19_PART2.md  # Bill explorer & topic selection session
   /strategy                 # Strategic planning documents
 ```
 
@@ -153,7 +179,16 @@ See `.env.local.example` for setup instructions.
 - Public API endpoint: `https://api.congress.gov/v3/bill/{congress}`
 - Requires free API key (5,000 requests/hour)
 - Searches bills by number (e.g., "HR 1234") or title keywords (e.g., "climate")
-- Returns: bill number, title, latest action status, date
+- Enhanced query parameters:
+  - `q` - Search query (bill number or keywords)
+  - `type` - Bill type filter (hr, s, hjres, sjres, or 'all')
+  - `limit` - Number of results (default: 10 for autocomplete, 200 for explorer)
+  - `sort` - Sort order ('recent' or 'oldest')
+- Returns: bill number, full title, truncated title, latest action status, date, type, congress
+- **Used by**:
+  - Homepage autocomplete (inline search)
+  - Bill Explorer page (`/bills`) with advanced filtering
+- **Auto-Topic Detection**: `mapBillTitleToTopic()` function in `IssuePicker.tsx` analyzes bill title and auto-selects topic from 10 predefined categories via keyword matching
 - Debounced search (300ms) to reduce API calls
 - 1-hour caching via Next.js revalidation
 - Graceful degradation: feature is optional if API key not provided
@@ -195,7 +230,10 @@ TypeScript strict mode enabled. Import paths use `@/*` alias pointing to project
 
 - In-memory rate limiting (not shared across serverless instances)
 - No email addresses for officials (5 Calls API limitation)
-- Basic bill autocomplete only (no full bill text or vote history - planned for post-MVP)
+- Bill explorer shows 200 most recent bills (not all 19,315 in 118th Congress)
+  - Search by specific bill number will still find any bill
+  - Status filtering is client-side text analysis (not API-provided)
+- No bill sponsors, vote tallies, or related bills displayed (planned for post-MVP)
 - No analytics or tracking (planned for post-MVP)
 - No phone script generation (planned for post-MVP)
 - Limited to U.S. addresses (5 Calls API constraint)

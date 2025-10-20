@@ -21,21 +21,37 @@ interface CongressApiResponse {
 interface BillSuggestion {
   number: string;
   title: string;
+  titleShort: string;
   status: string;
   date: string;
+  type: string;
+  congress: number;
 }
 
 /**
- * GET /api/bills/search?q={query}
+ * GET /api/bills/search?q={query}&type={billType}&limit={limit}&sort={sort}
  *
  * Searches Congress.gov API for bills matching the query.
- * Returns simplified bill suggestions for autocomplete.
+ * Returns simplified bill suggestions for autocomplete or bill explorer.
+ *
+ * Query params:
+ * - q: Search query (bill number or title keywords)
+ * - type: Bill type filter (hr, s, hjres, sjres, or 'all')
+ * - limit: Number of results to return (default: 10 for autocomplete, 50 for explorer)
+ * - sort: Sort order ('recent' or 'oldest', default: 'recent')
  */
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get('q') || '';
+  const billTypeFilter = req.nextUrl.searchParams.get('type') || 'all';
+  const limitParam = req.nextUrl.searchParams.get('limit') || '10';
+  const sortParam = req.nextUrl.searchParams.get('sort') || 'recent';
 
-  // Require at least 2 characters to search
-  if (query.length < 2) {
+  const limit = parseInt(limitParam, 10);
+  const sortOrder = sortParam === 'oldest' ? 'updateDate asc' : 'updateDate desc';
+
+  // For autocomplete, require at least 2 characters
+  // For explorer (higher limits), allow showing all bills
+  if (query.length < 2 && limit <= 10) {
     return Response.json([]);
   }
 
@@ -51,10 +67,17 @@ export async function GET(req: NextRequest) {
     // Get current Congress number (118th Congress: 2023-2024)
     const currentCongress = 118;
 
-    const url = new URL(`https://api.congress.gov/v3/bill/${currentCongress}`);
+    // Build API URL with optional bill type filter
+    let apiPath = `https://api.congress.gov/v3/bill/${currentCongress}`;
+    if (billTypeFilter !== 'all') {
+      apiPath += `/${billTypeFilter}`;
+    }
+
+    const url = new URL(apiPath);
     url.searchParams.set('format', 'json');
-    url.searchParams.set('limit', '100'); // Fetch more bills to increase match probability
-    url.searchParams.set('sort', 'updateDate desc');
+    // Fetch more than requested to allow for filtering
+    url.searchParams.set('limit', Math.min(limit * 2, 250).toString());
+    url.searchParams.set('sort', sortOrder);
 
     const res = await fetch(url.toString(), {
       headers: {
@@ -83,16 +106,24 @@ export async function GET(req: NextRequest) {
         };
       })
       .filter((bill) => {
+        // If no query, return all (for bill explorer)
+        if (!query) return true;
+
         const fullNumber = bill.fullNumber.toLowerCase();
         const title = bill.title.toLowerCase();
         return fullNumber.includes(queryLower) || title.includes(queryLower);
       })
-      .slice(0, 10) // Limit to 10 suggestions
+      .slice(0, limit) // Apply requested limit
       .map((bill) => ({
         number: bill.fullNumber,
-        title: bill.title.slice(0, 100) + (bill.title.length > 100 ? '...' : ''), // Truncate long titles
+        // Return full title for topic detection, truncate on display if needed
+        title: bill.title,
+        // Also provide truncated version for autocomplete display
+        titleShort: bill.title.slice(0, 100) + (bill.title.length > 100 ? '...' : ''),
         status: bill.latestAction?.text || 'Introduced',
         date: bill.latestAction?.actionDate || bill.updateDate,
+        type: bill.type.toLowerCase(),
+        congress: bill.congress,
       }));
 
     return Response.json(bills);
