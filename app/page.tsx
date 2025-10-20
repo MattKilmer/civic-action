@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import TopNav from "./components/TopNav";
 import Footer from "./components/Footer";
@@ -13,7 +13,7 @@ type Official = {
   name: string; role: string; party?: string; phones: string[]; emails: string[]; urls: string[]; photoUrl?: string; primaryUrl?: string;
 };
 
-export default function Page() {
+function PageContent() {
   const searchParams = useSearchParams();
   const [officials, setOfficials] = useState<Official[] | null>(null);
   const [issue, setIssue] = useState<Issue | null>(null);
@@ -145,5 +145,13 @@ export default function Page() {
     </main>
     <Footer />
   </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <PageContent />
+    </Suspense>
   );
 }
