@@ -4,8 +4,25 @@ import TopNav from "../components/TopNav";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "About | Take Civic Action",
-  description: "Learn how Take Civic Action empowers citizens to contact their elected representatives through AI-powered communication tools.",
+  title: "How It Works - AI-Powered Tool to Contact Representatives",
+  description: "Learn how Take Civic Action makes it easy to contact your elected officials. Step-by-step guide: enter your address, select your issue, get AI-generated letters, and send to representatives. Research shows personalized letters are the #1 most influential form of constituent communication. 100% free, nonpartisan, and privacy-first.",
+  keywords: [
+    "how to contact representatives",
+    "contact elected officials guide",
+    "civic engagement how it works",
+    "AI letter generator for congress",
+    "constituent communication tool",
+    "how to write to congressman",
+    "civic action tutorial"
+  ],
+  alternates: {
+    canonical: "https://takecivicaction.org/about",
+  },
+  openGraph: {
+    title: "How It Works - Contact Your Representatives in 4 Easy Steps",
+    description: "Free tool to contact elected officials. Enter address, select issue, get AI letter, send. Research-backed, nonpartisan, privacy-first.",
+    url: "https://takecivicaction.org/about",
+  },
 };
 
 export default function AboutPage() {

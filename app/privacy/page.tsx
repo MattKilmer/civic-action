@@ -4,8 +4,24 @@ import TopNav from "../components/TopNav";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Take Civic Action",
-  description: "Our commitment to your privacy: we never store addresses, political positions, or communication content.",
+  title: "Privacy Policy - We Never Store Your Address or Political Positions",
+  description: "Take Civic Action's privacy-first approach: we never store your address, political positions, or letter drafts. Stateless architecture means no database to breach. Learn how we protect your privacy while helping you contact elected officials. GDPR compliant, no tracking, no data sales.",
+  keywords: [
+    "privacy policy civic engagement",
+    "data privacy political tool",
+    "no data storage civic action",
+    "privacy-first government tool",
+    "stateless civic engagement",
+    "GDPR compliant civic tool"
+  ],
+  alternates: {
+    canonical: "https://takecivicaction.org/privacy",
+  },
+  openGraph: {
+    title: "Privacy Policy - Privacy-First Civic Engagement",
+    description: "We never store your address, political positions, or drafts. Stateless architecture, no tracking, no data sales. Full transparency.",
+    url: "https://takecivicaction.org/privacy",
+  },
 };
 
 export default function PrivacyPage() {
