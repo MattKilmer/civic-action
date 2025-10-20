@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Research-backed top 10 issues for young voters (2024-2025 data)
 // Based on Harvard Youth Poll, Pew Research, and AP-NORC polling
@@ -26,14 +26,55 @@ export type Issue = {
   tone?: "neutral" | "urgent" | "friendly";
 };
 
+interface BillSuggestion {
+  number: string;
+  title: string;
+  status: string;
+  date: string;
+}
+
 export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void }) {
   const [issue, setIssue] = useState<Issue>({ stance: "support", topic: DEFAULT_TOPICS[0], tone: "neutral" });
+  const [billQuery, setBillQuery] = useState("");
+  const [billSuggestions, setBillSuggestions] = useState<BillSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceTimer = useRef<NodeJS.Timeout>();
 
   function update<K extends keyof Issue>(k: K, v: Issue[K]) {
     const next = { ...issue, [k]: v };
     setIssue(next);
     onChange(next);
   }
+
+  // Debounced bill search
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    if (billQuery.length < 2) {
+      setBillSuggestions([]);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/bills/search?q=${encodeURIComponent(billQuery)}`);
+        if (res.ok) {
+          const suggestions = await res.json();
+          setBillSuggestions(suggestions);
+        }
+      } catch (error) {
+        console.error('Bill search error:', error);
+      }
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [billQuery]);
 
   return (
     <div className="space-y-6">
@@ -100,7 +141,7 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
 
       {/* Optional Fields */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <div>
+        <div className="relative">
           <label htmlFor="bill-number" className="block font-semibold text-gray-700 mb-1 text-sm">
             Bill Number <span className="text-gray-500 font-normal">(optional)</span>
           </label>
@@ -108,9 +149,41 @@ export default function IssuePicker({ onChange }: { onChange: (v: Issue) => void
             id="bill-number"
             type="text"
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="e.g., HR 1234"
-            onChange={(e) => update("bill", e.target.value)}
+            placeholder="e.g., HR 1234 or search by title"
+            value={billQuery}
+            onChange={(e) => {
+              setBillQuery(e.target.value);
+              update("bill", e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => {
+              // Delay to allow clicking suggestions
+              setTimeout(() => setShowSuggestions(false), 200);
+            }}
           />
+
+          {/* Bill Suggestions Dropdown */}
+          {showSuggestions && billSuggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+              {billSuggestions.map((bill) => (
+                <button
+                  key={bill.number}
+                  type="button"
+                  className="w-full px-3 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                  onClick={() => {
+                    setBillQuery(bill.number);
+                    update("bill", bill.number);
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <div className="font-semibold text-sm text-gray-900">{bill.number}</div>
+                  <div className="text-xs text-gray-600 line-clamp-1">{bill.title}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{bill.status}</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <label htmlFor="desired-action" className="block font-semibold text-gray-700 mb-1 text-sm">
