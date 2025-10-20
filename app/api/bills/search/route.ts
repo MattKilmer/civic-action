@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(`https://api.congress.gov/v3/bill/${currentCongress}`);
     url.searchParams.set('format', 'json');
-    url.searchParams.set('limit', '20');
+    url.searchParams.set('limit', '100'); // Fetch more bills to increase match probability
     url.searchParams.set('sort', 'updateDate desc');
 
     const res = await fetch(url.toString(), {
@@ -74,14 +74,22 @@ export async function GET(req: NextRequest) {
     // Filter bills by query (search in number and title)
     const queryLower = query.toLowerCase();
     const bills: BillSuggestion[] = data.bills
+      .map((bill) => {
+        // Combine type and number to create full bill number (e.g., "HR 6358", "S 3283")
+        const fullNumber = `${bill.type} ${bill.number}`;
+        return {
+          ...bill,
+          fullNumber,
+        };
+      })
       .filter((bill) => {
-        const number = bill.number.toLowerCase();
+        const fullNumber = bill.fullNumber.toLowerCase();
         const title = bill.title.toLowerCase();
-        return number.includes(queryLower) || title.includes(queryLower);
+        return fullNumber.includes(queryLower) || title.includes(queryLower);
       })
       .slice(0, 10) // Limit to 10 suggestions
       .map((bill) => ({
-        number: bill.number,
+        number: bill.fullNumber,
         title: bill.title.slice(0, 100) + (bill.title.length > 100 ? '...' : ''), // Truncate long titles
         status: bill.latestAction?.text || 'Introduced',
         date: bill.latestAction?.actionDate || bill.updateDate,
