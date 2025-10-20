@@ -8,8 +8,8 @@ A web app that makes it simple for citizens to contact their representatives wit
 
 ## Features
 
-- **Officials Lookup**: Find all elected officials (local → federal) for any U.S. address using the 5 Calls API
-- **Comprehensive Coverage**: Includes federal (House, Senate), state (Governor, AG, Sec of State, legislators), and local officials
+- **Officials Lookup**: Find elected officials (state → federal) for any U.S. address using the 5 Calls API
+- **Comprehensive Coverage**: Includes federal (House, Senate) and state (Governor, AG, Sec of State, legislators)
 - **Issue Selection**: Choose from common issues or enter your own, with support/oppose stance
 - **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
 - **Contact Paths**: Direct links to email, phone, and official websites
@@ -84,7 +84,10 @@ Then:
   /actions
     draftEmail.ts           # Server action for OpenAI calls
   /components
+    TopNav.tsx              # Sticky navigation
+    Footer.tsx              # Professional footer
     AddressForm.tsx         # Address input
+    LocationStatus.tsx      # Address submission feedback
     IssuePicker.tsx         # Issue & stance selection
     OfficialCard.tsx        # Single official display
     OfficialsList.tsx       # Officials grid
@@ -94,6 +97,9 @@ Then:
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
   page.tsx                  # Main page
+  icon.svg                  # Favicon
+  opengraph-image.tsx       # Social media preview image
+  twitter-image.tsx         # Twitter card image
 ```
 
 ## Deployment

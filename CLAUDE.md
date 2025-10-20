@@ -28,9 +28,11 @@ npm run lint         # Run ESLint
 1. **Client**: User enters address in `AddressForm.tsx`
 2. **API Route** (`/api/reps/route.ts`): Calls 5 Calls API (no auth required)
 3. **Mapper** (`lib/civic.ts`): Transforms 5 Calls response into `OfficialContact[]`
-4. **Client**: User selects issue in `IssuePicker.tsx`, sees officials in `OfficialsList.tsx`
-5. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
-6. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
+4. **Client**: Officials displayed immediately in `OfficialsList.tsx` (with disabled draft buttons)
+5. **Client**: User optionally selects issue in `IssuePicker.tsx` (enables draft generation)
+6. **Client**: User clicks "Draft email" button on any official
+7. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
+8. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
 
 ### Key Architectural Decisions
 
@@ -71,7 +73,10 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
   /actions
     draftEmail.ts           # Core AI drafting logic
   /components
+    TopNav.tsx              # Sticky navigation with mobile menu
+    Footer.tsx              # Professional footer with commitments
     AddressForm.tsx         # Simple controlled input
+    LocationStatus.tsx      # User feedback for address submission
     IssuePicker.tsx         # Multi-field issue selector
     OfficialCard.tsx        # Individual official with draft UI
     OfficialsList.tsx       # Manages drafts state for all officials
@@ -81,6 +86,10 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
   page.tsx                  # Main page with state coordination
+  icon.svg                  # Favicon (capitol building)
+  apple-icon.svg            # Apple touch icon
+  opengraph-image.tsx       # Dynamic OG image generation
+  twitter-image.tsx         # Twitter card image
 ```
 
 ## Environment Variables
