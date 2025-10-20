@@ -126,10 +126,13 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const debounceTimer = useRef<NodeJS.Timeout>();
+  const isAutoDetectingRef = useRef(false); // Track if we're auto-detecting topic from bill
 
   // Pre-fill bill number and auto-detect topic from bill title
   useEffect(() => {
     if (initialBillNumber) {
+      isAutoDetectingRef.current = true; // Flag that we're auto-detecting
+
       setBillQuery(initialBillNumber);
 
       // Auto-detect topic from bill title
@@ -150,6 +153,8 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
       }
 
       update("bill", initialBillNumber);
+
+      isAutoDetectingRef.current = false; // Done auto-detecting
 
       // Fetch bill summary if we have congress and type info
       if (initialBillCongress && initialBillType) {
@@ -181,6 +186,17 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
   function handleTopicChange(value: string) {
     setSelectedTopicValue(value);
+
+    // Only clear bill fields if user is MANUALLY changing topic (not auto-detection)
+    if (!isAutoDetectingRef.current) {
+      // Clear bill-related fields when user manually changes topic
+      // This ensures bill information doesn't persist when switching to a different topic
+      setBillQuery("");
+      update("bill", undefined);
+      update("billTitle", undefined);
+      update("billSummary", undefined);
+      setSummaryExpanded(true); // Reset summary expansion state
+    }
 
     if (value === "OTHER") {
       // When "Other" is selected, wait for custom input

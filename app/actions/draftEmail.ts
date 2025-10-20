@@ -11,10 +11,12 @@ function systemPrompt() {
     "- Then 2–3 short bullets explaining why based on what the bill actually does.",
     "- CRITICAL: When bill information is provided, you MUST:",
     "  * Explicitly mention the bill number and title in your opening paragraph",
+    "  * Use the EXACT bill number format provided (e.g., 'HR 1234' not 'H.R. 1234', 'HRES 1524' not 'H.Res. 1524')",
     "  * Write ONLY about what that specific bill does (based on the summary provided)",
     "  * Do NOT write about general topics - be specific to this legislation",
     "- If no bill is provided, write about the general topic.",
-    "- Close with a clear ask (e.g., 'I urge you to support/oppose [BILL NUMBER]') and request for a written response.",
+    "- Close with a clear ask using the EXACT bill number format (e.g., 'I urge you to support/oppose HR 1234').",
+    "- Request a written response.",
     "- Tone: calm, civil, professional. No insults, no threats.",
   ].join("\n");
 }
@@ -38,6 +40,9 @@ function userPrompt(input: IssueDraftInput, official?: OfficialContact) {
       : (input.billTitle || "Specific Legislation");
 
     parts.push(`BILL-SPECIFIC REQUEST: ${billHeader}`);
+    if (input.bill) {
+      parts.push(`IMPORTANT: Use this EXACT bill number format in your email: "${input.bill}"`);
+    }
     parts.push(`WHAT THIS BILL DOES: ${input.billSummary}`);
     parts.push(`Constituent stance: ${input.stance.toUpperCase()} this bill`);
     if (impact) parts.push(impact.trim());
@@ -47,6 +52,7 @@ function userPrompt(input: IssueDraftInput, official?: OfficialContact) {
   } else if (input.bill) {
     // Has bill number but no summary - still bill-focused
     parts.push(`BILL: ${input.bill}${input.billTitle ? ` - ${input.billTitle}` : ""}`);
+    parts.push(`IMPORTANT: Use this EXACT bill number format in your email: "${input.bill}"`);
     parts.push(`Constituent stance: ${input.stance.toUpperCase()} — Topic: ${input.topic}`);
     if (impact) parts.push(impact.trim());
     if (ask) parts.push(ask.trim());
