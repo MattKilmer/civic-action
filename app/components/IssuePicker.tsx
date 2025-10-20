@@ -185,25 +185,25 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   }
 
   function handleTopicChange(value: string) {
+    console.log(`[IssuePicker.handleTopicChange] Topic changed to: "${value}", isAutoDetecting: ${isAutoDetectingRef.current}`);
     setSelectedTopicValue(value);
+
+    // Determine the new topic value
+    const newTopic = value === "OTHER" ? (customTopic || "") : (value || "");
 
     // Only clear bill fields if user is MANUALLY changing topic (not auto-detection)
     if (!isAutoDetectingRef.current) {
-      // Clear bill-related fields when user manually changes topic
-      // This ensures bill information doesn't persist when switching to a different topic
+      console.log('[IssuePicker.handleTopicChange] MANUAL topic change - clearing bill fields (bill, billTitle, billSummary) and setting new topic');
+      // Clear bill-related fields AND set new topic in ONE update
       setBillQuery("");
-      update("bill", undefined);
-      update("billTitle", undefined);
-      update("billSummary", undefined);
+      const next = { ...issue, bill: undefined, billTitle: undefined, billSummary: undefined, topic: newTopic };
+      setIssue(next);
+      onChange(next);
       setSummaryExpanded(true); // Reset summary expansion state
-    }
-
-    if (value === "OTHER") {
-      // When "Other" is selected, wait for custom input
-      update("topic", customTopic || "");
-    } else if (value) {
-      // Use the selected predefined topic
-      update("topic", value);
+    } else {
+      console.log('[IssuePicker.handleTopicChange] AUTO-DETECTING from bill - preserving bill fields, only updating topic');
+      // Just update the topic without clearing bill fields
+      update("topic", newTopic);
     }
   }
 
