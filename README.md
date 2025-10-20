@@ -8,28 +8,45 @@ A web app that makes it simple for citizens to contact their representatives wit
 
 ## Features
 
+### Core Functionality
 - **Officials Lookup**: Find elected officials (state → federal) for any U.S. address using the 5 Calls API
 - **Comprehensive Coverage**: Includes federal (House, Senate) and state (Governor, AG, Sec of State, legislators)
-- **Issue Selection**: Choose from common issues or enter your own, with support/oppose stance
+- **Research-Backed Issues**: Top 10 issues for young voters based on Harvard Youth Poll, Pew Research, and AP-NORC data
+- **Issue Selection**: Choose from curated issues or enter your own, with support/oppose stance
+- **Bill Autocomplete**: Search Congress.gov API for federal bills by number or title (e.g., "HR 1234" or "climate")
 - **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
 - **Contact Paths**: Direct links to email, phone, and official websites
 - **Privacy-First**: No address storage, no auto-sending—users maintain full control
+
+### Pages & Information
+- **About Page**: How it works, mission, research-backed impact data (CMF studies)
+- **Privacy Policy**: Comprehensive transparency on data practices (we never store addresses or positions)
+
+### Technical Features
 - **Rate Limited**: Built-in protection (30 req/min for lookups, 15 req/min for AI)
+- **SEO Optimized**: Sitemap, robots.txt, structured data (JSON-LD), optimized metadata
+- **Mobile-First**: Responsive design, accessible (WCAG AA compliant)
+- **Edge Runtime**: Fast, globally distributed via Vercel
 
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router) + TypeScript
 - **Styling**: Tailwind CSS
-- **APIs**: 5 Calls API (no auth required) + OpenAI
+- **APIs**:
+  - 5 Calls API (officials lookup, no auth required)
+  - Congress.gov API (bill autocomplete, free API key)
+  - OpenAI GPT-4o-mini (email drafting)
 - **Validation**: Zod
-- **Deployment**: Vercel-ready
+- **SEO**: Built-in sitemap, robots.txt, JSON-LD structured data
+- **Deployment**: Vercel (Edge Runtime)
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- OpenAI account (for GPT-4o-mini)
+- OpenAI API key (required for email drafting)
+- Congress.gov API key (optional for bill autocomplete)
 
 ### 1. Clone and Install
 
@@ -47,12 +64,19 @@ Copy the example environment file:
 cp .env.local.example .env.local
 ```
 
-Then add your API key to `.env.local`:
+Then add your API keys to `.env.local`:
 
-**OpenAI API:**
+**OpenAI API (Required):**
 1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Create a new API key
 3. Copy the key to `OPENAI_API_KEY`
+
+**Congress.gov API (Optional - for bill autocomplete):**
+1. Go to [Congress.gov API](https://api.congress.gov/sign-up/)
+2. Sign up for a free API key (5,000 requests/hour)
+3. Copy the key to `CONGRESS_API_KEY`
+
+**Note:** The app will work without the Congress API key, but bill autocomplete won't be available.
 
 ### 3. Run Locally
 
@@ -78,28 +102,44 @@ Then:
 
 ```
 /app
+  /about
+    page.tsx                # About page (How It Works)
+  /privacy
+    page.tsx                # Privacy Policy page
   /api
-    /reps/route.ts          # Officials lookup endpoint
-    /ai/draft/route.ts      # Email draft generation endpoint
+    /reps/route.ts          # Officials lookup endpoint (5 Calls API)
+    /ai/draft/route.ts      # Email draft generation endpoint (OpenAI)
+    /bills/search/route.ts  # Bill search endpoint (Congress.gov API)
   /actions
     draftEmail.ts           # Server action for OpenAI calls
   /components
-    TopNav.tsx              # Sticky navigation
-    Footer.tsx              # Professional footer
+    TopNav.tsx              # Sticky navigation with About/Privacy links
+    Footer.tsx              # Professional footer with commitments
     AddressForm.tsx         # Address input
     LocationStatus.tsx      # Address submission feedback
-    IssuePicker.tsx         # Issue & stance selection
+    IssuePicker.tsx         # Issue & stance selection (with bill autocomplete)
     OfficialCard.tsx        # Single official display
-    OfficialsList.tsx       # Officials grid
+    OfficialsList.tsx       # Officials grid with draft management
   /lib
-    civic.ts                # Civic API response mapper
+    civic.ts                # 5 Calls API response mapper
     mailto.ts               # mailto: URL builder
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
   page.tsx                  # Main page
-  icon.svg                  # Favicon
+  layout.tsx                # Root layout with metadata and JSON-LD
+  sitemap.ts                # Auto-generated sitemap.xml
+  robots.ts                 # Auto-generated robots.txt
+  icon.svg                  # Favicon (capitol building)
+  apple-icon.svg            # Apple touch icon
   opengraph-image.tsx       # Social media preview image
   twitter-image.tsx         # Twitter card image
+
+/docs
+  IMPACT_ANALYSIS.md        # Research on civic action vs protests
+  ISSUE_TOPICS.md           # Issue topic selection methodology
+  SEO.md                    # SEO optimization guide
+  SESSION_SUMMARY.md        # Development session summaries
+  /strategy                 # Strategic planning documents
 ```
 
 ## Deployment
@@ -108,20 +148,47 @@ Then:
 
 1. Push your code to GitHub
 2. Import your repository in [Vercel](https://vercel.com)
-3. Add environment variable in Vercel dashboard:
-   - `OPENAI_API_KEY`
+3. Add environment variables in Vercel dashboard:
+   - `OPENAI_API_KEY` (required)
+   - `CONGRESS_API_KEY` (optional)
 4. Deploy
 
 The app uses Edge Runtime for all API routes, making it fast and globally distributed.
 
-## Roadmap (Post-MVP)
+### Post-Deployment SEO
 
-- [ ] **Bill Context**: Fetch bill titles/summaries from Congress.gov
+1. Submit sitemap to [Google Search Console](https://search.google.com/search-console)
+   - Add property: `https://yourdomain.com`
+   - Submit sitemap: `https://yourdomain.com/sitemap.xml`
+2. Submit to [Bing Webmaster Tools](https://www.bing.com/webmasters)
+3. Monitor indexing and keyword rankings
+
+## Roadmap
+
+### ✅ Completed (Production)
+- [x] Officials lookup (5 Calls API)
+- [x] AI email drafting (OpenAI)
+- [x] Bill autocomplete (Congress.gov API)
+- [x] About and Privacy pages
+- [x] SEO optimization (sitemap, robots.txt, structured data)
+- [x] Research-backed issue topics
+- [x] Mobile-responsive design
+- [x] Professional navigation and footer
+
+### 🔄 In Progress
+- [ ] Submit to search consoles
+- [ ] Monitor initial SEO performance
+- [ ] Gather user feedback
+
+### 📋 Planned (Post-MVP)
 - [ ] **Phone Scripts**: Generate 30-second call scripts
-- [ ] **Action Tracking**: "I sent it" button to track impact
-- [ ] **OpenStates Integration**: Enhanced state-level coverage
-- [ ] **Upstash/Vercel KV**: Production-grade Redis rate limiting
-- [ ] **Analytics**: Measure messages sent, issues addressed, responses
+- [ ] **Action Tracking**: "I sent it" button to measure impact
+- [ ] **Blog/Content**: Educational content for SEO
+- [ ] **State Bills**: OpenStates API integration
+- [ ] **Upstash Redis**: Production-grade rate limiting
+- [ ] **Analytics**: Privacy-respecting usage metrics (Plausible)
+- [ ] **Email Collection** (optional): For impact updates
+- [ ] **Advanced Bill Context**: Full bill text, sponsors, vote history
 
 ## Privacy & Ethics
 

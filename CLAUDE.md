@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Civic Action MVP is a Next.js 14 web app that helps citizens contact their elected officials. Users enter an address, select an issue/stance, and receive AI-generated email drafts for every official from local to federal level.
 
-**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection → AI Draft Generation (OpenAI) → Contact Methods
+**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with Bill Autocomplete) → AI Draft Generation (OpenAI) → Contact Methods
+
+**Production URL**: https://takecivicaction.org
 
 ## Development Commands
 
@@ -29,10 +31,13 @@ npm run lint         # Run ESLint
 2. **API Route** (`/api/reps/route.ts`): Calls 5 Calls API (no auth required)
 3. **Mapper** (`lib/civic.ts`): Transforms 5 Calls response into `OfficialContact[]`
 4. **Client**: Officials displayed immediately in `OfficialsList.tsx` (with disabled draft buttons)
-5. **Client**: User optionally selects issue in `IssuePicker.tsx` (enables draft generation)
-6. **Client**: User clicks "Draft email" button on any official
-7. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
-8. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
+5. **Client**: User selects issue in `IssuePicker.tsx`
+   - **Optional**: Types bill number/title → debounced search via `/api/bills/search` (Congress.gov API)
+   - **Optional**: Selects bill from autocomplete dropdown
+6. **Client**: Issue selection enables "Draft email" buttons
+7. **Client**: User clicks "Draft email" button on any official
+8. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
+9. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
 
 ### Key Architectural Decisions
 
@@ -67,17 +72,22 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
 
 ```
 /app
+  /about
+    page.tsx                # About / How It Works page
+  /privacy
+    page.tsx                # Privacy Policy page
   /api
     /reps/route.ts          # Officials lookup (5 Calls API)
     /ai/draft/route.ts      # Email draft generation (OpenAI)
+    /bills/search/route.ts  # Bill autocomplete (Congress.gov API)
   /actions
     draftEmail.ts           # Core AI drafting logic
   /components
-    TopNav.tsx              # Sticky navigation with mobile menu
+    TopNav.tsx              # Sticky navigation with About/Privacy links
     Footer.tsx              # Professional footer with commitments
     AddressForm.tsx         # Simple controlled input
     LocationStatus.tsx      # User feedback for address submission
-    IssuePicker.tsx         # Multi-field issue selector
+    IssuePicker.tsx         # Multi-field issue selector with bill autocomplete
     OfficialCard.tsx        # Individual official with draft UI
     OfficialsList.tsx       # Manages drafts state for all officials
   /lib
@@ -86,19 +96,30 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
   page.tsx                  # Main page with state coordination
+  layout.tsx                # Root layout with metadata and JSON-LD
+  sitemap.ts                # Auto-generated sitemap.xml
+  robots.ts                 # Auto-generated robots.txt
   icon.svg                  # Favicon (capitol building)
   apple-icon.svg            # Apple touch icon
   opengraph-image.tsx       # Dynamic OG image generation
   twitter-image.tsx         # Twitter card image
+
+/docs
+  IMPACT_ANALYSIS.md        # Research: civic action vs protests
+  ISSUE_TOPICS.md           # Issue selection methodology
+  SEO.md                    # SEO optimization guide
+  SESSION_SUMMARY.md        # Development session summaries
+  /strategy                 # Strategic planning documents
 ```
 
 ## Environment Variables
 
 Required in `.env.local`:
-- `OPENAI_API_KEY` - OpenAI API key
+- `OPENAI_API_KEY` - OpenAI API key (required for email drafting)
+- `CONGRESS_API_KEY` - Congress.gov API key (optional for bill autocomplete)
 - `APP_BASE_URL` - Base URL (optional, mainly for development)
 
-**Note**: The 5 Calls API requires no authentication, so no API key is needed for officials lookup.
+**Note**: The 5 Calls API requires no authentication. Congress.gov API is optional—bill autocomplete will gracefully degrade if not provided.
 
 See `.env.local.example` for setup instructions.
 
@@ -127,6 +148,15 @@ See `.env.local.example` for setup instructions.
 - Uses `gpt-4o-mini` with temperature 0.3
 - System prompt enforces structure: opening paragraph + 2-3 bullets + closing ask
 - User prompt includes: recipient, stance, topic, bill, personal impact, desired action, jurisdiction, tone
+
+**Congress.gov API** (`/api/bills/search/route.ts`):
+- Public API endpoint: `https://api.congress.gov/v3/bill/{congress}`
+- Requires free API key (5,000 requests/hour)
+- Searches bills by number (e.g., "HR 1234") or title keywords (e.g., "climate")
+- Returns: bill number, title, latest action status, date
+- Debounced search (300ms) to reduce API calls
+- 1-hour caching via Next.js revalidation
+- Graceful degradation: feature is optional if API key not provided
 
 ## Styling
 
@@ -165,7 +195,8 @@ TypeScript strict mode enabled. Import paths use `@/*` alias pointing to project
 
 - In-memory rate limiting (not shared across serverless instances)
 - No email addresses for officials (5 Calls API limitation)
-- No bill context fetching (planned for post-MVP)
+- Basic bill autocomplete only (no full bill text or vote history - planned for post-MVP)
 - No analytics or tracking (planned for post-MVP)
 - No phone script generation (planned for post-MVP)
 - Limited to U.S. addresses (5 Calls API constraint)
+- Federal + state coverage only (no local officials yet)

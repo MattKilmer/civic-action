@@ -910,6 +910,35 @@ Get a working data source, deploy, and validate with real users.
 
 ---
 
+## Additional API Integrations (Post-Migration)
+
+### Congress.gov API (October 2025)
+
+**Purpose:** Bill autocomplete in issue selection
+
+**Implementation:**
+- ✅ Added `/api/bills/search` endpoint
+- ✅ Integrated with `IssuePicker.tsx` component
+- ✅ Debounced search (300ms) to reduce API calls
+- ✅ 1-hour caching to stay within rate limits
+
+**Coverage:**
+- Federal bills from 118th Congress (2023-2024)
+- Search by bill number (e.g., "HR 1234") or title keywords (e.g., "climate")
+- Returns: bill number, title, latest action status, date
+
+**Cost:**
+- Free tier: 5,000 requests/hour
+- API key required: https://api.congress.gov/sign-up/
+- Optional: gracefully degrades if API key not provided
+
+**User Experience:**
+- Users can type bill numbers or keywords to find relevant legislation
+- Dropdown shows matching bills with status
+- Click to auto-fill bill number field
+
+---
+
 *Last updated: October 19, 2025*
 *Status: ✅ Completed - Live in production*
 *Migration completed by: Claude Code*
