@@ -355,6 +355,11 @@ export default function BillExplorerPage() {
     params.set('bill', bill.number);
     params.set('billTitle', bill.title);
 
+    // Include summary if available (for both federal and state bills)
+    if (bill.summary) {
+      params.set('billSummary', bill.summary);
+    }
+
     if (bill.level === 'state' && bill.jurisdiction) {
       // State bill - include jurisdiction
       params.set('billJurisdiction', bill.jurisdiction);
