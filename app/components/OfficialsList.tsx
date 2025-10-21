@@ -57,19 +57,16 @@ export default function OfficialsList({ officials, issue, location }: {
     canVote: canOfficialVoteOnBill(official.role, billInfo, official.state)
   }));
 
-  // Sort officials: voting officials first, maintaining original order within groups
-  const sortedOfficials = [...enrichedOfficials].sort((a, b) => {
-    if (a.canVote && !b.canVote) return -1;
-    if (!a.canVote && b.canVote) return 1;
-    return 0;
-  });
+  // Split officials into voting and non-voting groups
+  const votingOfficials = enrichedOfficials.filter(o => o.canVote);
+  const nonVotingOfficials = enrichedOfficials.filter(o => !o.canVote);
 
   // Get voting description for info banner
   const votingDescription = getVotingDescription(issue?.bill, billInfo?.jurisdiction);
   const showInfoBanner = votingDescription && !infoBannerDismissed;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Info Banner */}
       {showInfoBanner && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3" role="status">
@@ -93,20 +90,55 @@ export default function OfficialsList({ officials, issue, location }: {
         </div>
       )}
 
-      {/* Officials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {sortedOfficials.map((o) => (
-          <OfficialCard
-            key={o.name + o.role}
-            official={o}
-            draft={drafts[o.name + o.role]}
-            onDraft={() => draftFor(o)}
-            hasIssue={!!issue}
-            canVote={o.canVote}
-            billNumber={issue?.bill}
-          />
-        ))}
-      </div>
+      {/* Voting Officials Section */}
+      {votingOfficials.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Can Vote on This Bill
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {votingOfficials.map((o) => (
+              <OfficialCard
+                key={o.name + o.role}
+                official={o}
+                draft={drafts[o.name + o.role]}
+                onDraft={() => draftFor(o)}
+                hasIssue={!!issue}
+                canVote={o.canVote}
+                billNumber={issue?.bill}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Non-Voting Officials Section */}
+      {nonVotingOfficials.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            Can Advocate & Influence
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {nonVotingOfficials.map((o) => (
+              <OfficialCard
+                key={o.name + o.role}
+                official={o}
+                draft={drafts[o.name + o.role]}
+                onDraft={() => draftFor(o)}
+                hasIssue={!!issue}
+                canVote={o.canVote}
+                billNumber={issue?.bill}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
