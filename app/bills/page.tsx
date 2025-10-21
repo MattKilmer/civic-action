@@ -134,9 +134,16 @@ export default function BillExplorerPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [displayLimit, setDisplayLimit] = useState(50);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false); // For "Load More" button
   const [error, setError] = useState('');
   const [expandedBillNumber, setExpandedBillNumber] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState<string | null>(null);
+
+  // State bills API pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalStateBills, setTotalStateBills] = useState(0);
+  const [maxPage, setMaxPage] = useState(1);
+
   const debounceTimer = useRef<NodeJS.Timeout>();
 
   // Load user's state from session storage on mount
@@ -219,6 +226,9 @@ export default function BillExplorerPage() {
           if (!searchQuery || searchQuery.trim().length < 2) {
             // Don't fetch without a search query
             setBills([]);
+            setTotalStateBills(0);
+            setCurrentPage(1);
+            setMaxPage(1);
             setLoading(false);
             return;
           }
@@ -226,6 +236,7 @@ export default function BillExplorerPage() {
           const params = new URLSearchParams();
           params.set('q', searchQuery);
           if (selectedState !== 'all') params.set('jurisdiction', selectedState);
+          params.set('page', '1'); // Always start at page 1 for new searches
 
           const res = await fetch(`/api/bills/search-state?${params.toString()}`);
 
@@ -237,6 +248,12 @@ export default function BillExplorerPage() {
           }
 
           const data = await res.json();
+
+          // Store pagination info
+          setTotalStateBills(data.count || 0);
+          setCurrentPage(1);
+          // Note: API doesn't return max_page, we'll estimate based on results
+          setMaxPage(data.bills && data.bills.length === 20 ? 2 : 1);
 
           // Map state bill response to Bill interface
           const mappedBills: Bill[] = (data.bills || []).map((bill: any) => ({
@@ -273,6 +290,60 @@ export default function BillExplorerPage() {
   const filteredBills = filterByStatus(bills).slice(0, displayLimit);
   const totalFiltered = filterByStatus(bills).length;
   const canLoadMore = totalFiltered > displayLimit;
+
+  // Load more state bills from API
+  const loadMoreStateBills = async () => {
+    if (loadingMore || billLevel !== 'state') return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const params = new URLSearchParams();
+      params.set('q', searchQuery);
+      if (selectedState !== 'all') params.set('jurisdiction', selectedState);
+      params.set('page', nextPage.toString());
+
+      const res = await fetch(`/api/bills/search-state?${params.toString()}`);
+
+      if (!res.ok) {
+        throw new Error('Failed to load more bills');
+      }
+
+      const data = await res.json();
+
+      // Map new bills
+      const newBills: Bill[] = (data.bills || []).map((bill: any) => ({
+        number: bill.bill,
+        title: bill.title,
+        status: bill.latestAction || 'Introduced',
+        date: bill.introduced || '',
+        type: bill.chamber || 'state-bill',
+        level: 'state' as const,
+        jurisdiction: bill.jurisdiction,
+        session: bill.session,
+        summary: bill.summary,
+      }));
+
+      // Append new bills to existing ones
+      setBills(prev => [...prev, ...newBills]);
+      setCurrentPage(nextPage);
+
+      // Update max page if we got a full page of results
+      if (newBills.length === 20) {
+        setMaxPage(nextPage + 1);
+      } else {
+        setMaxPage(nextPage);
+      }
+    } catch (err) {
+      console.error('Error loading more bills:', err);
+      setError('Failed to load more bills');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Determine if we can load more (different logic for federal vs state)
+  const hasMoreStateBills = billLevel === 'state' && currentPage < maxPage && bills.length >= 20;
 
   const handleUseBill = (bill: Bill) => {
     // Navigate to homepage with bill pre-filled
@@ -762,8 +833,8 @@ export default function BillExplorerPage() {
               ))}
             </div>
 
-            {/* Load More Button */}
-            {canLoadMore && (
+            {/* Load More Button - Different logic for federal vs state */}
+            {billLevel === 'federal' && canLoadMore && (
               <div className="mt-8 text-center">
                 <button
                   onClick={() => setDisplayLimit(prev => prev + 50)}
@@ -774,6 +845,37 @@ export default function BillExplorerPage() {
                   </svg>
                   Load More Bills ({totalFiltered - displayLimit} remaining)
                 </button>
+              </div>
+            )}
+
+            {/* Load More for State Bills (API Pagination) */}
+            {billLevel === 'state' && hasMoreStateBills && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={loadMoreStateBills}
+                  disabled={loadingMore}
+                  className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-900 font-medium px-6 py-3 rounded-xl border border-gray-300 transition-colors shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Load More Bills
+                    </>
+                  )}
+                </button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Showing {bills.length} bills
+                </p>
               </div>
             )}
           </>

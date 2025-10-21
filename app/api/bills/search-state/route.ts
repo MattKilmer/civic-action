@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
   const query = searchParams.get("q");
   const jurisdiction = searchParams.get("jurisdiction"); // Optional: filter by state
   const session = searchParams.get("session"); // Optional: filter by legislative session
+  const page = searchParams.get("page"); // Optional: page number for pagination
 
   // Validate query
   if (!query || query.trim().length < 2) {
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
       query: query.trim(),
       jurisdiction: jurisdiction || undefined,
       session: session || undefined,
+      page: page ? parseInt(page, 10) : undefined,
       perPage: 20,
     });
 
