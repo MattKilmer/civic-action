@@ -176,9 +176,16 @@ export default function BillExplorerPage() {
           const data = await res.json();
           setBills(data);
         } else {
-          // State bills search
+          // State bills search - require a search query
+          if (!searchQuery || searchQuery.trim().length < 2) {
+            // Don't fetch without a search query
+            setBills([]);
+            setLoading(false);
+            return;
+          }
+
           const params = new URLSearchParams();
-          if (searchQuery) params.set('q', searchQuery);
+          params.set('q', searchQuery);
           if (selectedState !== 'all') params.set('jurisdiction', selectedState);
 
           const res = await fetch(`/api/bills/search-state?${params.toString()}`);
@@ -556,23 +563,34 @@ export default function BillExplorerPage() {
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No bills found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {billLevel === 'state' && !searchQuery ? 'Search for state bills' : 'No bills found'}
+            </h3>
             <p className="text-gray-600 mb-4">
-              {searchQuery
+              {billLevel === 'state' && !searchQuery
+                ? 'Enter keywords in the search box above to find state legislation. Examples: "education", "healthcare", "transportation"'
+                : searchQuery
                 ? `No bills match your search "${searchQuery}" with the selected filters.`
                 : 'No bills match your selected filters.'}
             </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setBillType('all');
-                setStatusFilter('all');
-                setSortOrder('recent');
-              }}
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
-            >
-              Clear all filters
-            </button>
+            {(searchQuery || billLevel === 'federal') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  if (billLevel === 'federal') {
+                    setBillType('all');
+                    setStatusFilter('all');
+                    setSortOrder('recent');
+                  } else {
+                    setSelectedState('all');
+                    setStatusFilter('all');
+                  }
+                }}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         )}
 
