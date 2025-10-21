@@ -33,6 +33,7 @@ export const IssueDraftSchema = z.object({
   session: z.string().optional(), // Legislative session for state bills
   city: z.string().optional(),
   state: z.string().optional(),
+  district: z.string().optional(), // Congressional district
   personalImpact: z.string().max(300).optional(),
   desiredAction: z
     .string()
