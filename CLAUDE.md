@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Civic Action MVP is a Next.js 14 web app that helps citizens contact their elected officials. Users enter an address, select an issue/stance, and receive AI-generated email drafts for every official from local to federal level.
 
-**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with Bill Autocomplete or Bill Explorer) → **Voting Power Indicators** (if bill selected) → AI Draft Generation (OpenAI) → Contact Methods
+**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with **Federal + State Bill Autocomplete** or Bill Explorer) → **Voting Power Indicators** (if bill selected) → AI Draft Generation (OpenAI) → Contact Methods
 
 **Alternative Bill Explorer Flow**: Bill Explorer Page (`/bills`) → Search/Filter Bills → Select Bill → Homepage with Bill + Topic Pre-filled → Draft Generation
 
@@ -37,13 +37,21 @@ npm run lint         # Run ESLint
 4. **Client**: Officials displayed immediately in `OfficialsList.tsx` (with disabled draft buttons)
 5. **Client**: User selects issue in `IssuePicker.tsx`
    - **Dropdown Selection**: Choose from 10 research-backed topics or "Other" (reveals custom field)
-   - **Optional Bill Search**: Types bill number/title → debounced search via `/api/bills/search` (Congress.gov API)
+   - **Optional Bill Search**: Types bill number/title → debounced **unified search** via:
+     - `/api/bills/search` (Federal bills - Congress.gov API)
+     - `/api/bills/search-state?jurisdiction={state}` (State bills - Open States API)
+   - **Merged Results**: State bills shown first (more relevant to user's location), then federal bills
+   - **Visual Distinction**: Green "California" badges for state bills, blue "Federal" badges for federal bills
    - **Optional Autocomplete**: Selects bill from autocomplete dropdown → topic auto-detected from bill title
 6. **Client**: If bill is selected, `OfficialsList.tsx` intelligently highlights voting power:
-   - **Bill Chamber Detection**: Determines if House or Senate bill (via `lib/billVoting.ts`)
+   - **Bill Detection**: Determines level (federal vs state) and chamber (via `lib/billVoting.ts`)
+     - Federal: "HR 683" → {chamber: "house", level: "federal"}
+     - State: "CA AB 123" → {chamber: "state-house", jurisdiction: "California", level: "state"}
    - **Official Reordering**: Voting officials automatically move to top
+   - **Jurisdiction Matching**: State bills only match legislators from that specific state
+     - Example: CA bill → only CA state legislators get "Can vote" badge
    - **Visual Indicators**: "Can vote" badge appears on eligible officials
-   - **Info Banner**: Dismissible banner explains who can vote directly
+   - **Info Banner**: Dismissible banner explains who can vote directly (includes state name for state bills)
 7. **Client**: Issue selection enables "Draft email" buttons
 8. **Client**: User clicks "Draft email" button on any official
 9. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
@@ -109,7 +117,10 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
   /api
     /reps/route.ts          # Officials lookup (5 Calls API)
     /ai/draft/route.ts      # Email draft generation (OpenAI)
-    /bills/search/route.ts  # Bill search API with type filtering (Congress.gov API)
+    /bills
+      /search/route.ts      # Federal bill search (Congress.gov API)
+      /search-state/route.ts # State bill search (Open States API) **NEW**
+      /[congress]/[type]/[number]/route.ts # Federal bill details
   /actions
     draftEmail.ts           # Core AI drafting logic
   /components
@@ -124,7 +135,9 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     civic.ts                # Maps 5 Calls API → OfficialContact[]
     mailto.ts               # Generates mailto: URLs
     rateLimit.ts            # In-memory rate limiter
-    schemas.ts              # Zod validation schemas
+    schemas.ts              # Zod validation schemas (includes BillSchema, BillLevel)
+    billVoting.ts           # Bill chamber detection + official voting eligibility **ENHANCED**
+    openstates.ts           # Open States API v3 client for state bills **NEW**
   page.tsx                  # Main page with state coordination + URL param handling
   layout.tsx                # Root layout with metadata and JSON-LD
   sitemap.ts                # Auto-generated sitemap.xml (includes /bills)
@@ -147,10 +160,11 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
 
 Required in `.env.local`:
 - `OPENAI_API_KEY` - OpenAI API key (required for email drafting)
-- `CONGRESS_API_KEY` - Congress.gov API key (optional for bill autocomplete)
+- `CONGRESS_API_KEY` - Congress.gov API key (optional for federal bill autocomplete)
+- `OPENSTATES_API_KEY` - Open States API key (optional for state bill autocomplete) **NEW**
 - `APP_BASE_URL` - Base URL (optional, mainly for development)
 
-**Note**: The 5 Calls API requires no authentication. Congress.gov API is optional—bill autocomplete will gracefully degrade if not provided.
+**Note**: The 5 Calls API requires no authentication. Congress.gov and Open States APIs are optional—bill autocomplete will gracefully degrade if not provided.
 
 See `.env.local.example` for setup instructions.
 
@@ -197,6 +211,33 @@ See `.env.local.example` for setup instructions.
 - Debounced search (300ms) to reduce API calls
 - 1-hour caching via Next.js revalidation
 - Graceful degradation: feature is optional if API key not provided
+
+**Open States API** (`/api/bills/search-state/route.ts`, `lib/openstates.ts`): **NEW**
+- API endpoint: `https://v3.openstates.org/bills`
+- Requires free API key (register at openstates.org/api/register/)
+- **Rate Limits**: 10 requests/minute, 500 requests/day (free tier)
+- Covers all 50 states + DC + Puerto Rico
+- Searches state legislature bills by query and jurisdiction
+- Query parameters:
+  - `q` - Search query (bill number or keywords)
+  - `jurisdiction` - State name (e.g., "California") - pre-filtered to user's state
+  - `session` - Legislative session (optional, e.g., "2023-2024")
+  - `include` - Include related data (abstracts, sponsorships)
+- Returns: bill identifier (e.g., "AB 123"), title, chamber, jurisdiction, session, sponsors, abstracts, latest action
+- **Bill Format Detection**: Automatically detects state bills by format (e.g., "CA AB 123")
+  - Extracts state abbreviation, determines chamber (Assembly/House vs Senate)
+  - Maps to full state name for jurisdiction matching
+- **Normalized Response**: Converts Open States format to match federal bill structure for UI consistency
+- **Unified Search**: Merged with federal bills in `IssuePicker.tsx`
+  - State bills shown first (more relevant to user's location)
+  - Federal bills shown second
+  - Visual distinction via green "California" vs blue "Federal" badges
+- **Voting Power Integration**: State bills matched to state legislators via jurisdiction
+  - "CA AB 123" → only CA state legislators get "Can vote" badge
+  - Prevents false matches (e.g., TX legislator on CA bill)
+- Debounced search (300ms) to reduce API calls
+- In-memory rate limiting (10 req/min as per API limits)
+- Graceful degradation: returns empty array with error message if API key not provided or rate limit exceeded
 
 ## Styling
 
