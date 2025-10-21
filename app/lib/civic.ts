@@ -97,6 +97,7 @@ export function mapFiveCallsToOfficials(data: FiveCallsResponse): OfficialContac
       party: rep.party || undefined,
       role: rep.reason, // e.g., "This is your representative in the House."
       level: rep.area, // e.g., "US House", "US Senate", "Governor"
+      state: rep.state || undefined, // State abbreviation (e.g., "CA", "NY")
       phones,
       emails: [], // 5 Calls API doesn't provide emails
       urls: rep.url ? [rep.url] : [],

@@ -2,10 +2,18 @@
 import OfficialCard from "./OfficialCard";
 import type { Issue } from "./IssuePicker";
 import { useState } from "react";
-import { getBillChamber, canOfficialVoteOnBill, getVotingDescription } from "@/app/lib/billVoting";
+import { getBillInfo, canOfficialVoteOnBill, getVotingDescription } from "@/app/lib/billVoting";
 
 type Official = {
-  name: string; role: string; party?: string; phones: string[]; emails: string[]; urls: string[]; photoUrl?: string; primaryUrl?: string;
+  name: string;
+  role: string;
+  party?: string;
+  state?: string; // State abbreviation for state legislators
+  phones: string[];
+  emails: string[];
+  urls: string[];
+  photoUrl?: string;
+  primaryUrl?: string;
 };
 
 type EnrichedOfficial = Official & {
@@ -32,11 +40,11 @@ export default function OfficialsList({ officials, issue, location }: {
     if (json.text) setDrafts((d) => ({ ...d, [official.name + official.role]: json.text }));
   }
 
-  // Determine bill chamber and enrich officials with voting info
-  const billChamber = getBillChamber(issue?.bill);
+  // Determine bill info and enrich officials with voting info
+  const billInfo = getBillInfo(issue?.bill, location?.state);
   const enrichedOfficials: EnrichedOfficial[] = officials.map(official => ({
     ...official,
-    canVote: canOfficialVoteOnBill(official.role, billChamber)
+    canVote: canOfficialVoteOnBill(official.role, billInfo, official.state)
   }));
 
   // Sort officials: voting officials first, maintaining original order within groups
@@ -47,7 +55,7 @@ export default function OfficialsList({ officials, issue, location }: {
   });
 
   // Get voting description for info banner
-  const votingDescription = getVotingDescription(issue?.bill);
+  const votingDescription = getVotingDescription(issue?.bill, billInfo?.jurisdiction);
   const showInfoBanner = votingDescription && !infoBannerDismissed;
 
   return (
