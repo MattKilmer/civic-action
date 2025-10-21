@@ -54,6 +54,7 @@ interface IssuePickerProps {
   onChange: (v: Issue) => void;
   initialBillNumber?: string | null;
   initialBillTitle?: string | null;
+  initialBillSummary?: string | null; // Bill summary for both federal and state bills
   initialBillCongress?: string | null;
   initialBillType?: string | null;
   initialBillJurisdiction?: string | null; // State name for state bills
@@ -120,7 +121,7 @@ function mapBillTitleToTopic(billTitle: string): string {
   return "OTHER";
 }
 
-export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillCongress, initialBillType, initialBillJurisdiction, initialBillSession, userState }: IssuePickerProps) {
+export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillSummary, initialBillCongress, initialBillType, initialBillJurisdiction, initialBillSession, userState }: IssuePickerProps) {
   const [issue, setIssue] = useState<Issue>({
     stance: "support",
     topic: DEFAULT_TOPICS[0],
@@ -175,10 +176,15 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         update("session", initialBillSession);
       }
 
+      // If summary is provided in URL (state bills), use it directly
+      if (initialBillSummary) {
+        update("billSummary", initialBillSummary);
+      }
+
       isAutoDetectingRef.current = false; // Done auto-detecting
 
-      // Fetch bill summary if we have congress and type info (federal bills)
-      if (initialBillCongress && initialBillType) {
+      // Fetch bill summary if we have congress and type info (federal bills) and no summary provided
+      if (initialBillCongress && initialBillType && !initialBillSummary) {
         setLoadingSummary(true);
         fetchBillDetails(
           parseInt(initialBillCongress),
@@ -195,7 +201,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialBillNumber, initialBillTitle, initialBillCongress, initialBillType]);
+  }, [initialBillNumber, initialBillTitle, initialBillSummary, initialBillCongress, initialBillType, initialBillJurisdiction, initialBillSession]);
 
   function update<K extends keyof Issue>(k: K, v: Issue[K]) {
     console.log(`[IssuePicker.update] Setting ${k} =`, v);

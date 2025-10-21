@@ -23,6 +23,7 @@ function PageContent() {
   const [location, setLocation] = useState<{ city?: string; state?: string; district?: string } | null>(null);
   const [initialBillNumber, setInitialBillNumber] = useState<string | null>(null);
   const [initialBillTitle, setInitialBillTitle] = useState<string | null>(null);
+  const [initialBillSummary, setInitialBillSummary] = useState<string | null>(null);
   const [initialBillCongress, setInitialBillCongress] = useState<string | null>(null);
   const [initialBillType, setInitialBillType] = useState<string | null>(null);
   const [initialBillJurisdiction, setInitialBillJurisdiction] = useState<string | null>(null);
@@ -55,6 +56,7 @@ function PageContent() {
   useEffect(() => {
     const billParam = searchParams.get('bill');
     const titleParam = searchParams.get('billTitle');
+    const summaryParam = searchParams.get('billSummary');
     const congressParam = searchParams.get('billCongress');
     const typeParam = searchParams.get('billType');
     const jurisdictionParam = searchParams.get('billJurisdiction'); // State bills
@@ -64,6 +66,9 @@ function PageContent() {
       setInitialBillNumber(billParam);
       if (titleParam) {
         setInitialBillTitle(titleParam);
+      }
+      if (summaryParam) {
+        setInitialBillSummary(summaryParam);
       }
       if (congressParam) {
         setInitialBillCongress(congressParam);
@@ -170,6 +175,7 @@ function PageContent() {
             onChange={(v) => setIssue(v)}
             initialBillNumber={initialBillNumber}
             initialBillTitle={initialBillTitle}
+            initialBillSummary={initialBillSummary}
             initialBillCongress={initialBillCongress}
             initialBillType={initialBillType}
             initialBillJurisdiction={initialBillJurisdiction}
