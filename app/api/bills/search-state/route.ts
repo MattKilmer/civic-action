@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "anonymous";
   const rateLimitResult = rateLimit(`state-bill-search:${ip}`, 15, 60);
 
-  if (!rateLimitResult.success) {
+  if (!rateLimitResult.ok) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       { status: 429 }
