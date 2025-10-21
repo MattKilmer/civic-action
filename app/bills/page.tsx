@@ -208,7 +208,12 @@ export default function BillExplorerPage() {
           }
 
           const data = await res.json();
-          setBills(data);
+          // Map federal bills to include level field
+          const federalBills = data.map((bill: Bill) => ({
+            ...bill,
+            level: 'federal' as const,
+          }));
+          setBills(federalBills);
         } else {
           // State bills search - require a search query
           if (!searchQuery || searchQuery.trim().length < 2) {
