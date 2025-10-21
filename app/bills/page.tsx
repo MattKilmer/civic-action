@@ -11,8 +11,11 @@ interface Bill {
   status: string;
   date: string;
   type: string;
-  congress: number;
+  congress?: number;
   summary?: string;
+  level?: 'federal' | 'state';
+  jurisdiction?: string;
+  session?: string;
 }
 
 const BILL_TYPES = [
@@ -21,6 +24,66 @@ const BILL_TYPES = [
   { value: 's', label: 'Senate Bills (S)' },
   { value: 'hjres', label: 'House Joint Resolutions' },
   { value: 'sjres', label: 'Senate Joint Resolutions' },
+];
+
+const STATE_BILL_TYPES = [
+  { value: 'all', label: 'All Types' },
+  { value: 'state-house', label: 'State House Bills' },
+  { value: 'state-senate', label: 'State Senate Bills' },
+];
+
+const US_STATES = [
+  { value: 'all', label: 'All States' },
+  { value: 'Alabama', label: 'Alabama' },
+  { value: 'Alaska', label: 'Alaska' },
+  { value: 'Arizona', label: 'Arizona' },
+  { value: 'Arkansas', label: 'Arkansas' },
+  { value: 'California', label: 'California' },
+  { value: 'Colorado', label: 'Colorado' },
+  { value: 'Connecticut', label: 'Connecticut' },
+  { value: 'Delaware', label: 'Delaware' },
+  { value: 'Florida', label: 'Florida' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Hawaii', label: 'Hawaii' },
+  { value: 'Idaho', label: 'Idaho' },
+  { value: 'Illinois', label: 'Illinois' },
+  { value: 'Indiana', label: 'Indiana' },
+  { value: 'Iowa', label: 'Iowa' },
+  { value: 'Kansas', label: 'Kansas' },
+  { value: 'Kentucky', label: 'Kentucky' },
+  { value: 'Louisiana', label: 'Louisiana' },
+  { value: 'Maine', label: 'Maine' },
+  { value: 'Maryland', label: 'Maryland' },
+  { value: 'Massachusetts', label: 'Massachusetts' },
+  { value: 'Michigan', label: 'Michigan' },
+  { value: 'Minnesota', label: 'Minnesota' },
+  { value: 'Mississippi', label: 'Mississippi' },
+  { value: 'Missouri', label: 'Missouri' },
+  { value: 'Montana', label: 'Montana' },
+  { value: 'Nebraska', label: 'Nebraska' },
+  { value: 'Nevada', label: 'Nevada' },
+  { value: 'New Hampshire', label: 'New Hampshire' },
+  { value: 'New Jersey', label: 'New Jersey' },
+  { value: 'New Mexico', label: 'New Mexico' },
+  { value: 'New York', label: 'New York' },
+  { value: 'North Carolina', label: 'North Carolina' },
+  { value: 'North Dakota', label: 'North Dakota' },
+  { value: 'Ohio', label: 'Ohio' },
+  { value: 'Oklahoma', label: 'Oklahoma' },
+  { value: 'Oregon', label: 'Oregon' },
+  { value: 'Pennsylvania', label: 'Pennsylvania' },
+  { value: 'Rhode Island', label: 'Rhode Island' },
+  { value: 'South Carolina', label: 'South Carolina' },
+  { value: 'South Dakota', label: 'South Dakota' },
+  { value: 'Tennessee', label: 'Tennessee' },
+  { value: 'Texas', label: 'Texas' },
+  { value: 'Utah', label: 'Utah' },
+  { value: 'Vermont', label: 'Vermont' },
+  { value: 'Virginia', label: 'Virginia' },
+  { value: 'Washington', label: 'Washington' },
+  { value: 'West Virginia', label: 'West Virginia' },
+  { value: 'Wisconsin', label: 'Wisconsin' },
+  { value: 'Wyoming', label: 'Wyoming' },
 ];
 
 const STATUS_FILTERS = [
@@ -40,8 +103,10 @@ const SORT_OPTIONS = [
 const TOTAL_BILLS_118TH = 19315; // Total bills in 118th Congress
 
 export default function BillExplorerPage() {
+  const [billLevel, setBillLevel] = useState<'federal' | 'state'>('federal');
   const [searchQuery, setSearchQuery] = useState('');
   const [billType, setBillType] = useState('all');
+  const [selectedState, setSelectedState] = useState('all');
   const [statusFilter, setStatusFilter] = useState('active'); // Default to active bills
   const [sortOrder, setSortOrder] = useState('recent');
   const [bills, setBills] = useState<Bill[]>([]);
@@ -94,21 +159,51 @@ export default function BillExplorerPage() {
       setError('');
 
       try {
-        const params = new URLSearchParams();
-        if (searchQuery) params.set('q', searchQuery);
-        if (billType !== 'all') params.set('type', billType);
-        params.set('sort', sortOrder);
-        // Fetch more bills to allow better filtering
-        params.set('limit', '200');
+        if (billLevel === 'federal') {
+          // Federal bills search
+          const params = new URLSearchParams();
+          if (searchQuery) params.set('q', searchQuery);
+          if (billType !== 'all') params.set('type', billType);
+          params.set('sort', sortOrder);
+          params.set('limit', '200');
 
-        const res = await fetch(`/api/bills/search?${params.toString()}`);
+          const res = await fetch(`/api/bills/search?${params.toString()}`);
 
-        if (!res.ok) {
-          throw new Error('Failed to fetch bills');
+          if (!res.ok) {
+            throw new Error('Failed to fetch federal bills');
+          }
+
+          const data = await res.json();
+          setBills(data);
+        } else {
+          // State bills search
+          const params = new URLSearchParams();
+          if (searchQuery) params.set('q', searchQuery);
+          if (selectedState !== 'all') params.set('jurisdiction', selectedState);
+
+          const res = await fetch(`/api/bills/search-state?${params.toString()}`);
+
+          if (!res.ok) {
+            throw new Error('Failed to fetch state bills');
+          }
+
+          const data = await res.json();
+
+          // Map state bill response to Bill interface
+          const mappedBills: Bill[] = (data.bills || []).map((bill: any) => ({
+            number: bill.bill,
+            title: bill.title,
+            status: bill.latestAction || 'Introduced',
+            date: bill.introduced || '',
+            type: bill.chamber || 'state-bill',
+            level: 'state' as const,
+            jurisdiction: bill.jurisdiction,
+            session: bill.session,
+            summary: bill.summary,
+          }));
+
+          setBills(mappedBills);
         }
-
-        const data = await res.json();
-        setBills(data);
       } catch (err) {
         console.error('Error fetching bills:', err);
         setError('Failed to load bills. Please try again.');
@@ -123,7 +218,7 @@ export default function BillExplorerPage() {
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchQuery, billType, sortOrder]);
+  }, [searchQuery, billType, selectedState, sortOrder, billLevel]);
 
   // Apply status filter and display limit
   const filteredBills = filterByStatus(bills).slice(0, displayLimit);
@@ -131,13 +226,21 @@ export default function BillExplorerPage() {
   const canLoadMore = totalFiltered > displayLimit;
 
   const handleUseBill = (bill: Bill) => {
-    // Navigate to homepage with bill number, title, congress, and type pre-filled
-    // This allows fetching the bill summary for better AI context
+    // Navigate to homepage with bill pre-filled
     const params = new URLSearchParams();
     params.set('bill', bill.number);
     params.set('billTitle', bill.title);
-    params.set('billCongress', bill.congress.toString());
-    params.set('billType', bill.type);
+
+    if (bill.level === 'state' && bill.jurisdiction) {
+      // State bill - include jurisdiction
+      params.set('billJurisdiction', bill.jurisdiction);
+      if (bill.session) params.set('billSession', bill.session);
+    } else if (bill.congress) {
+      // Federal bill - include congress and type
+      params.set('billCongress', bill.congress.toString());
+      params.set('billType', bill.type);
+    }
+
     window.location.href = `/?${params.toString()}`;
   };
 
@@ -232,11 +335,47 @@ export default function BillExplorerPage() {
           </nav>
 
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Explore Federal Legislation
+            Explore Legislation
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl">
-            Browse current bills in the 118th Congress. Find legislation you care about and use it as the subject of your letter to representatives.
+            Browse federal and state bills. Find legislation you care about and use it as the subject of your letter to representatives.
           </p>
+
+          {/* Tabs for Federal vs State */}
+          <div className="mt-6 flex gap-2 border-b border-gray-200">
+            <button
+              onClick={() => {
+                setBillLevel('federal');
+                setBills([]);
+                setSearchQuery('');
+                setBillType('all');
+                setStatusFilter('active');
+              }}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                billLevel === 'federal'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Federal Bills
+            </button>
+            <button
+              onClick={() => {
+                setBillLevel('state');
+                setBills([]);
+                setSearchQuery('');
+                setSelectedState('all');
+                setStatusFilter('all');
+              }}
+              className={`px-6 py-3 font-medium transition-colors relative ${
+                billLevel === 'state'
+                  ? 'text-emerald-600 border-b-2 border-emerald-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              State Bills
+            </button>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -250,7 +389,11 @@ export default function BillExplorerPage() {
               <input
                 id="search"
                 type="text"
-                placeholder="e.g., HR 1234 or climate change"
+                placeholder={
+                  billLevel === 'federal'
+                    ? "e.g., HR 1234 or climate change"
+                    : "e.g., AB 123 or education funding"
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -281,43 +424,65 @@ export default function BillExplorerPage() {
                 </select>
               </div>
 
-              {/* Bill Type Filter */}
-              <div>
-                <label htmlFor="billType" className="block text-sm font-medium text-gray-700 mb-2">
-                  Bill Type
-                </label>
-                <select
-                  id="billType"
-                  value={billType}
-                  onChange={(e) => setBillType(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  {BILL_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Conditional Filter: Bill Type (Federal) or State (State Bills) */}
+              {billLevel === 'federal' ? (
+                <div>
+                  <label htmlFor="billType" className="block text-sm font-medium text-gray-700 mb-2">
+                    Bill Type
+                  </label>
+                  <select
+                    id="billType"
+                    value={billType}
+                    onChange={(e) => setBillType(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  >
+                    {BILL_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="selectedState" className="block text-sm font-medium text-gray-700 mb-2">
+                    State
+                  </label>
+                  <select
+                    id="selectedState"
+                    value={selectedState}
+                    onChange={(e) => setSelectedState(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  >
+                    {US_STATES.map((state) => (
+                      <option key={state.value} value={state.value}>
+                        {state.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              {/* Sort Order */}
-              <div>
-                <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 mb-2">
-                  Sort By
-                </label>
-                <select
-                  id="sortOrder"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Sort Order - only for federal (state bills come pre-sorted by relevance) */}
+              {billLevel === 'federal' && (
+                <div>
+                  <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 mb-2">
+                    Sort By
+                  </label>
+                  <select
+                    id="sortOrder"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  >
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Results Info */}
@@ -327,15 +492,28 @@ export default function BillExplorerPage() {
                   {loading ? 'Loading...' : `Showing ${filteredBills.length} of ${totalFiltered} bills`}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Total in 118th Congress: {TOTAL_BILLS_118TH.toLocaleString()} bills
-                  {searchQuery && ` • Searching: "${searchQuery}"`}
+                  {billLevel === 'federal' ? (
+                    <>
+                      Total in 118th Congress: {TOTAL_BILLS_118TH.toLocaleString()} bills
+                      {searchQuery && ` • Searching: "${searchQuery}"`}
+                    </>
+                  ) : (
+                    <>
+                      {selectedState !== 'all' ? `${selectedState} state bills` : 'All state bills'}
+                      {searchQuery && ` • Searching: "${searchQuery}"`}
+                    </>
+                  )}
                 </p>
               </div>
               {!loading && filteredBills.length === 0 && bills.length > 0 && (
                 <button
                   onClick={() => {
                     setStatusFilter('all');
-                    setBillType('all');
+                    if (billLevel === 'federal') {
+                      setBillType('all');
+                    } else {
+                      setSelectedState('all');
+                    }
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
@@ -407,11 +585,23 @@ export default function BillExplorerPage() {
                   key={bill.number}
                   className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
                 >
-                  {/* Bill Number */}
+                  {/* Bill Number with jurisdiction badge */}
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold text-blue-600">
-                      {bill.number}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className={`text-xl font-bold ${bill.level === 'state' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        {bill.number}
+                      </h3>
+                      {bill.level === 'state' && bill.jurisdiction && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          {bill.jurisdiction}
+                        </span>
+                      )}
+                      {bill.level === 'federal' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                          Federal
+                        </span>
+                      )}
+                    </div>
                     <span
                       className={`text-xs font-medium px-2 py-1 rounded-full border ${getStatusColor(
                         bill.status
@@ -484,23 +674,29 @@ export default function BillExplorerPage() {
                   {/* Primary Action Button */}
                   <button
                     onClick={() => handleUseBill(bill)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition-colors"
+                    className={`w-full ${
+                      bill.level === 'state'
+                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    } text-white font-medium py-2.5 px-4 rounded-xl transition-colors`}
                   >
                     Use this bill
                   </button>
 
-                  {/* Secondary Link - Subtle */}
-                  <a
-                    href={getCongressUrl(bill)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    View on Congress.gov
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
+                  {/* Secondary Link - Subtle - Only for federal bills */}
+                  {bill.level === 'federal' && bill.congress && (
+                    <a
+                      href={getCongressUrl(bill)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      View on Congress.gov
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
@@ -523,18 +719,33 @@ export default function BillExplorerPage() {
         )}
 
         {/* Info Box */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
-          <h3 className="font-semibold text-blue-900 mb-2">
+        <div className={`mt-8 ${
+          billLevel === 'federal'
+            ? 'bg-blue-50 border-blue-200 text-blue-900'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+        } border rounded-2xl p-6`}>
+          <h3 className="font-semibold mb-2">
             How to use the Bill Explorer
           </h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>Search:</strong> Find bills by number (e.g., &quot;HR 1234&quot;) or keywords (e.g., &quot;climate&quot;)</li>
-            <li>• <strong>Filter by status:</strong> Focus on active bills, enacted laws, or bills at specific stages</li>
-            <li>• <strong>Filter by type:</strong> House bills, Senate bills, or joint resolutions</li>
-            <li>• <strong>View Summary:</strong> Click to read the official bill summary from Congress.gov</li>
-            <li>• <strong>Select a bill:</strong> Click &quot;Use this bill&quot; to automatically fill it into your letter</li>
-            <li>• <strong>Note:</strong> Showing recent bills from 118th Congress ({TOTAL_BILLS_118TH.toLocaleString()} total). Use search to find any specific bill.</li>
-          </ul>
+          {billLevel === 'federal' ? (
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• <strong>Search:</strong> Find bills by number (e.g., &quot;HR 1234&quot;) or keywords (e.g., &quot;climate&quot;)</li>
+              <li>• <strong>Filter by status:</strong> Focus on active bills, enacted laws, or bills at specific stages</li>
+              <li>• <strong>Filter by type:</strong> House bills, Senate bills, or joint resolutions</li>
+              <li>• <strong>View Summary:</strong> Click to read the official bill summary from Congress.gov</li>
+              <li>• <strong>Select a bill:</strong> Click &quot;Use this bill&quot; to automatically fill it into your letter</li>
+              <li>• <strong>Note:</strong> Showing recent bills from 118th Congress ({TOTAL_BILLS_118TH.toLocaleString()} total). Use search to find any specific bill.</li>
+            </ul>
+          ) : (
+            <ul className="text-sm text-emerald-800 space-y-1">
+              <li>• <strong>Search:</strong> Find bills by number (e.g., &quot;AB 123&quot;) or keywords (e.g., &quot;education&quot;)</li>
+              <li>• <strong>Filter by state:</strong> Select a specific state or view all states</li>
+              <li>• <strong>Filter by status:</strong> Focus on active bills, enacted laws, or bills at specific stages</li>
+              <li>• <strong>View Summary:</strong> Click to read the official bill summary</li>
+              <li>• <strong>Select a bill:</strong> Click &quot;Use this bill&quot; to automatically fill it into your letter to your state legislators</li>
+              <li>• <strong>Note:</strong> State bill data powered by Open States API. Coverage includes all 50 states.</li>
+            </ul>
+          )}
         </div>
       </main>
 
