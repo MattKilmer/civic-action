@@ -165,29 +165,31 @@ function PageContent() {
           />
         </section>
 
-        {/* Officials List Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-              3
+        {/* Officials List Section - Only show after address is submitted */}
+        {submittedAddress && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+                3
+              </div>
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+                Contact your officials
+              </h2>
             </div>
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
-              Contact your officials
-            </h2>
-          </div>
 
-          {officials && officials.length > 0 && (
-            <OfficialsList officials={officials} issue={issue} location={location || undefined} />
-          )}
+            {officials && officials.length > 0 && (
+              <OfficialsList officials={officials} issue={issue} location={location || undefined} />
+            )}
 
-          {officials && officials.length === 0 && !loading && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-              <p className="text-amber-900 font-medium">
-                No officials found for this location. Please try a different address.
-              </p>
-            </div>
-          )}
-        </section>
+            {officials && officials.length === 0 && !loading && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+                <p className="text-amber-900 font-medium">
+                  No officials found for this location. Please try a different address.
+                </p>
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </main>
     <Footer />
