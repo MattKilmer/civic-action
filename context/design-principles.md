@@ -247,9 +247,9 @@ hover:shadow-md transition-shadow
 
 **Grid Layout:**
 *   Single column on mobile
-*   2 columns on tablet (`md:grid-cols-2`)
-*   3 columns on desktop (`lg:grid-cols-3`)
+*   2 columns on tablet and desktop (`md:grid-cols-2`)
 *   Consistent gap between cards (`gap-6`)
+*   **Note:** 2 columns (not 3) on desktop provides better readability and prevents cramped card layouts
 
 **Card Order:**
 *   Federal officials first (President, Senators, Representatives)
