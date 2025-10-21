@@ -124,7 +124,15 @@ function PageContent() {
         </header>
 
         {/* Address Form Section */}
-        <section ref={addressFormRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
+        <section ref={addressFormRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+              1
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Enter your address
+            </h2>
+          </div>
           <AddressForm onSubmit={fetchOfficials} />
         </section>
 
@@ -142,7 +150,7 @@ function PageContent() {
         <section ref={issuePickerRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-              1
+              2
             </div>
             <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
               Choose your issue & stance
@@ -161,7 +169,7 @@ function PageContent() {
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-              2
+              3
             </div>
             <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
               Contact your officials
