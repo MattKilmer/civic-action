@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Civic Action MVP is a Next.js 14 web app that helps citizens contact their elected officials. Users enter an address, select an issue/stance, and receive AI-generated email drafts for every official from local to federal level.
 
-**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with Bill Autocomplete or Bill Explorer) → AI Draft Generation (OpenAI) → Contact Methods
+**Key Flow**: Address → Officials Lookup (5 Calls API) → Issue Selection (with Bill Autocomplete or Bill Explorer) → **Voting Power Indicators** (if bill selected) → AI Draft Generation (OpenAI) → Contact Methods
 
 **Alternative Bill Explorer Flow**: Bill Explorer Page (`/bills`) → Search/Filter Bills → Select Bill → Homepage with Bill + Topic Pre-filled → Draft Generation
 
@@ -39,10 +39,15 @@ npm run lint         # Run ESLint
    - **Dropdown Selection**: Choose from 10 research-backed topics or "Other" (reveals custom field)
    - **Optional Bill Search**: Types bill number/title → debounced search via `/api/bills/search` (Congress.gov API)
    - **Optional Autocomplete**: Selects bill from autocomplete dropdown → topic auto-detected from bill title
-6. **Client**: Issue selection enables "Draft email" buttons
-7. **Client**: User clicks "Draft email" button on any official
-8. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
-9. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
+6. **Client**: If bill is selected, `OfficialsList.tsx` intelligently highlights voting power:
+   - **Bill Chamber Detection**: Determines if House or Senate bill (via `lib/billVoting.ts`)
+   - **Official Reordering**: Voting officials automatically move to top
+   - **Visual Indicators**: "Can vote" badge appears on eligible officials
+   - **Info Banner**: Dismissible banner explains who can vote directly
+7. **Client**: Issue selection enables "Draft email" buttons
+8. **Client**: User clicks "Draft email" button on any official
+9. **API Route** (`/api/ai/draft/route.ts`): Calls OpenAI via `actions/draftEmail.ts`
+10. **Client**: Draft appears in `OfficialCard.tsx` with mailto: link
 
 #### Bill Explorer Flow (Alternative Entry Point)
 1. **Client**: User visits `/bills` page
