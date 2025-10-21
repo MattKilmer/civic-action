@@ -127,43 +127,60 @@ export async function searchStateBills(params: {
     }
 
     searchParams.set("page", String(params.page || 1));
-    searchParams.set("per_page", String(params.perPage || 20));
+    searchParams.set("per_page", String(params.perPage || 10)); // Reduced for faster response
 
-    // Include sponsorships and abstracts in response (append each separately)
-    searchParams.append("include", "abstracts");
-    searchParams.append("include", "sponsorships");
+    // Note: Removed 'include' params to speed up API response
+    // We can add them back if needed, but basic bill info is faster
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
-    const response = await fetch(url, {
-      headers: {
-        "X-API-KEY": API_KEY,
-      },
-    });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Open States API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-        url,
-        apiKeyConfigured: !!API_KEY
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "X-API-KEY": API_KEY,
+        },
+        signal: controller.signal,
       });
-      return {
-        bills: [],
-        error: `State bill search failed (${response.status}: ${response.statusText})`
-      };
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Open States API error:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          url,
+          apiKeyConfigured: !!API_KEY
+        });
+        return {
+          bills: [],
+          error: `State bill search failed (${response.status}: ${response.statusText})`
+        };
+      }
+
+      const data: OpenStatesSearchResponse = await response.json();
+
+      // Normalize to our format
+      const bills: NormalizedStateBill[] = data.results.map(mapOpenStatesBillToNormalized);
+
+      return { bills };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
-
-    const data: OpenStatesSearchResponse = await response.json();
-
-    // Normalize to our format
-    const bills: NormalizedStateBill[] = data.results.map(mapOpenStatesBillToNormalized);
-
-    return { bills };
   } catch (error) {
     console.error("Open States API request failed:", error);
+
+    // Check if error is due to abort/timeout
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { bills: [], error: "Request timeout - the Open States API is taking too long to respond. Try a more specific search." };
+    }
+
     return { bills: [], error: "State bill search failed" };
   }
 }
@@ -189,32 +206,50 @@ export async function getStateBill(params: {
     searchParams.set("jurisdiction", params.jurisdiction);
     searchParams.set("session", params.session);
     searchParams.set("identifier", params.identifier);
-    searchParams.append("include", "abstracts");
-    searchParams.append("include", "sponsorships");
+
+    // Note: Removed 'include' params for faster response
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
-    const response = await fetch(url, {
-      headers: {
-        "X-API-KEY": API_KEY,
-      },
-    });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    if (!response.ok) {
-      return { bill: null, error: `Bill not found (${response.status})` };
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "X-API-KEY": API_KEY,
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        return { bill: null, error: `Bill not found (${response.status})` };
+      }
+
+      const data: OpenStatesSearchResponse = await response.json();
+
+      if (data.results.length === 0) {
+        return { bill: null, error: "Bill not found" };
+      }
+
+      const bill = mapOpenStatesBillToNormalized(data.results[0]);
+
+      return { bill };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
-
-    const data: OpenStatesSearchResponse = await response.json();
-
-    if (data.results.length === 0) {
-      return { bill: null, error: "Bill not found" };
-    }
-
-    const bill = mapOpenStatesBillToNormalized(data.results[0]);
-
-    return { bill };
   } catch (error) {
     console.error("Open States API request failed:", error);
+
+    // Check if error is due to abort/timeout
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { bill: null, error: "Request timeout" };
+    }
+
     return { bill: null, error: "Bill lookup failed" };
   }
 }
