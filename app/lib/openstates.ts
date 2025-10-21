@@ -165,8 +165,10 @@ export async function searchStateBills(params: {
 
       const data: OpenStatesSearchResponse = await response.json();
 
-      // Normalize to our format
-      const bills: NormalizedStateBill[] = data.results.map(mapOpenStatesBillToNormalized);
+      // Normalize to our format and filter out null results (bills with incomplete data)
+      const bills: NormalizedStateBill[] = data.results
+        .map(mapOpenStatesBillToNormalized)
+        .filter((bill): bill is NormalizedStateBill => bill !== null);
 
       return { bills };
     } catch (fetchError) {
@@ -237,6 +239,10 @@ export async function getStateBill(params: {
 
       const bill = mapOpenStatesBillToNormalized(data.results[0]);
 
+      if (!bill) {
+        return { bill: null, error: "Bill data incomplete" };
+      }
+
       return { bill };
     } catch (fetchError) {
       clearTimeout(timeoutId);
@@ -257,7 +263,13 @@ export async function getStateBill(params: {
 /**
  * Map Open States bill format to our normalized format
  */
-function mapOpenStatesBillToNormalized(bill: OpenStatesBill): NormalizedStateBill {
+function mapOpenStatesBillToNormalized(bill: OpenStatesBill): NormalizedStateBill | null {
+  // Defensive checks for required fields
+  if (!bill.legislative_session?.jurisdiction?.name) {
+    console.warn("Bill missing jurisdiction data:", bill.id);
+    return null;
+  }
+
   const jurisdiction = bill.legislative_session.jurisdiction.name;
   const stateAbbr = getStateAbbreviation(jurisdiction);
 
