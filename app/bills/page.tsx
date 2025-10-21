@@ -225,6 +225,9 @@ export default function BillExplorerPage() {
           const res = await fetch(`/api/bills/search-state?${params.toString()}`);
 
           if (!res.ok) {
+            if (res.status === 429) {
+              throw new Error('Rate limit exceeded. Please try again in a few moments.');
+            }
             throw new Error('Failed to fetch state bills');
           }
 
