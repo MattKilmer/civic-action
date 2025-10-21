@@ -29,6 +29,8 @@ export const IssueDraftSchema = z.object({
   billSummary: z.string().optional(),
   billLevel: BillLevelSchema.optional(), // "federal" or "state"
   billJurisdiction: z.string().optional(), // State name for state bills
+  jurisdiction: z.string().optional(), // State name for state bills (from Issue type)
+  session: z.string().optional(), // Legislative session for state bills
   city: z.string().optional(),
   state: z.string().optional(),
   personalImpact: z.string().max(300).optional(),
