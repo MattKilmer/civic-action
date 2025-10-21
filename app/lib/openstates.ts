@@ -94,6 +94,7 @@ export interface NormalizedStateBill {
   introduced?: string;
   latestAction?: string;
   sponsors?: string[];
+  url?: string; // OpenStates.org URL for full bill text
 }
 
 /**
@@ -131,6 +132,9 @@ export async function searchStateBills(params: {
 
     searchParams.set("page", String(params.page || 1));
     searchParams.set("per_page", String(params.perPage || 20));
+
+    // Include abstracts for bill summaries
+    searchParams.append("include", "abstracts");
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
@@ -209,7 +213,8 @@ export async function getStateBill(params: {
     searchParams.set("session", params.session);
     searchParams.set("identifier", params.identifier);
 
-    // Note: Removed 'include' params for faster response
+    // Include abstracts for bill summary
+    searchParams.append("include", "abstracts");
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
@@ -286,6 +291,7 @@ function mapOpenStatesBillToNormalized(bill: OpenStatesBill): NormalizedStateBil
     sponsors: bill.sponsorships
       ?.filter(s => s.entity_type === "person")
       .map(s => s.name),
+    url: bill.openstates_url,
   };
 }
 

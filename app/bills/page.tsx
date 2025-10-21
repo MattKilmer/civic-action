@@ -17,6 +17,7 @@ interface Bill {
   level?: 'federal' | 'state';
   jurisdiction?: string;
   session?: string;
+  url?: string; // OpenStates.org URL for state bills
 }
 
 const BILL_TYPES = [
@@ -266,6 +267,7 @@ export default function BillExplorerPage() {
             jurisdiction: bill.jurisdiction,
             session: bill.session,
             summary: bill.summary,
+            url: bill.url, // OpenStates.org URL
           }));
 
           setBills(mappedBills);
@@ -322,6 +324,7 @@ export default function BillExplorerPage() {
         jurisdiction: bill.jurisdiction,
         session: bill.session,
         summary: bill.summary,
+        url: bill.url, // OpenStates.org URL
       }));
 
       // Append new bills to existing ones
@@ -815,7 +818,7 @@ export default function BillExplorerPage() {
                     Use this bill
                   </button>
 
-                  {/* Secondary Link - Subtle - Only for federal bills */}
+                  {/* Secondary Link - Subtle */}
                   {bill.level === 'federal' && bill.congress && (
                     <a
                       href={getCongressUrl(bill)}
@@ -824,6 +827,21 @@ export default function BillExplorerPage() {
                       className="inline-flex items-center gap-1 mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                     >
                       View on Congress.gov
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+
+                  {/* Secondary Link for State Bills */}
+                  {bill.level === 'state' && bill.url && (
+                    <a
+                      href={bill.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      View on OpenStates.org
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
