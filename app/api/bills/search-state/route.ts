@@ -35,12 +35,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Search state bills with reduced perPage for faster response
+    // Search state bills
     const result = await searchStateBills({
       query: query.trim(),
       jurisdiction: jurisdiction || undefined,
       session: session || undefined,
-      perPage: 10, // Reduced from 20 for faster API response
+      perPage: 20,
     });
 
     if (result.error) {

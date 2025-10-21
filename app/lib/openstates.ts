@@ -130,10 +130,7 @@ export async function searchStateBills(params: {
     }
 
     searchParams.set("page", String(params.page || 1));
-    searchParams.set("per_page", String(params.perPage || 10)); // Reduced for faster response
-
-    // Note: Removed 'include' params to speed up API response
-    // We can add them back if needed, but basic bill info is faster
+    searchParams.set("per_page", String(params.perPage || 20));
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
@@ -167,11 +164,6 @@ export async function searchStateBills(params: {
       }
 
       const data: OpenStatesSearchResponse = await response.json();
-
-      // Debug: Log first result to see what data we're getting
-      if (data.results.length > 0) {
-        console.log("Sample bill data:", JSON.stringify(data.results[0], null, 2));
-      }
 
       // Normalize to our format and filter out null results (bills with incomplete data)
       const bills: NormalizedStateBill[] = data.results
