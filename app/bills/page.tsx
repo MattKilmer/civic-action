@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import TopNav from '@/app/components/TopNav';
 import Footer from '@/app/components/Footer';
+import { loadSession } from '@/app/lib/sessionStorage';
 
 interface Bill {
   number: string;
@@ -102,11 +103,32 @@ const SORT_OPTIONS = [
 
 const TOTAL_BILLS_118TH = 19315; // Total bills in 118th Congress
 
+// Helper to map state abbreviations to full names
+function getFullStateName(abbr: string): string | null {
+  const stateMap: Record<string, string> = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+    'WI': 'Wisconsin', 'WY': 'Wyoming'
+  };
+  return stateMap[abbr.toUpperCase()] || null;
+}
+
 export default function BillExplorerPage() {
   const [billLevel, setBillLevel] = useState<'federal' | 'state'>('federal');
   const [searchQuery, setSearchQuery] = useState('');
   const [billType, setBillType] = useState('all');
   const [selectedState, setSelectedState] = useState('all');
+  const [userState, setUserState] = useState<string | null>(null); // User's state from session
   const [statusFilter, setStatusFilter] = useState('active'); // Default to active bills
   const [sortOrder, setSortOrder] = useState('recent');
   const [bills, setBills] = useState<Bill[]>([]);
@@ -116,6 +138,18 @@ export default function BillExplorerPage() {
   const [expandedBillNumber, setExpandedBillNumber] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
+
+  // Load user's state from session storage on mount
+  useEffect(() => {
+    const session = loadSession();
+    if (session?.location?.state) {
+      // Convert state abbreviation to full name
+      const fullStateName = getFullStateName(session.location.state);
+      if (fullStateName) {
+        setUserState(fullStateName);
+      }
+    }
+  }, []);
 
   // Filter bills by status on client side
   const filterByStatus = (billsList: Bill[]) => {
@@ -371,7 +405,8 @@ export default function BillExplorerPage() {
                 setBillLevel('state');
                 setBills([]);
                 setSearchQuery('');
-                setSelectedState('all');
+                // Default to user's state if available, otherwise 'all'
+                setSelectedState(userState || 'all');
                 setStatusFilter('all');
               }}
               className={`px-6 py-3 font-medium transition-colors relative ${
