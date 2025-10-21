@@ -171,15 +171,23 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         issueUpdates.billTitle = initialBillTitle;
       }
 
-      // Store jurisdiction and session for state bills
-      if (initialBillJurisdiction) {
+      // Determine bill type and set/clear appropriate fields
+      const isFederalBill = !!(initialBillCongress && initialBillType);
+      const isStateBill = !!initialBillJurisdiction;
+
+      if (isStateBill) {
+        // State bill - set jurisdiction/session
         issueUpdates.jurisdiction = initialBillJurisdiction;
-      }
-      if (initialBillSession) {
-        issueUpdates.session = initialBillSession;
+        if (initialBillSession) {
+          issueUpdates.session = initialBillSession;
+        }
+      } else if (isFederalBill) {
+        // Federal bill - explicitly clear state-specific fields
+        issueUpdates.jurisdiction = undefined;
+        issueUpdates.session = undefined;
       }
 
-      // If summary is provided in URL (state bills), use it directly
+      // If summary is provided in URL, use it directly
       if (initialBillSummary) {
         issueUpdates.billSummary = initialBillSummary;
       }
