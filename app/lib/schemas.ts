@@ -23,7 +23,7 @@ export const BillSchema = z.object({
 
 export const IssueDraftSchema = z.object({
   stance: StanceSchema,
-  topic: z.string().min(2).max(80),
+  topic: z.string().min(2).max(200), // Increased to 200 to accommodate full bill titles
   bill: z.string().optional(),
   billTitle: z.string().optional(),
   billSummary: z.string().optional(),
