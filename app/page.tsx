@@ -162,6 +162,7 @@ function PageContent() {
             initialBillTitle={initialBillTitle}
             initialBillCongress={initialBillCongress}
             initialBillType={initialBillType}
+            userState={location?.state}
           />
         </section>
 

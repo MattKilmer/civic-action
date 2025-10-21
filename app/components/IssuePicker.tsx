@@ -42,7 +42,10 @@ interface BillSuggestion {
   status: string;
   date: string;
   type: string;
-  congress: number;
+  congress?: number;
+  level?: "federal" | "state"; // "federal" or "state"
+  jurisdiction?: string; // State name for state bills
+  session?: string; // Legislative session for state bills
 }
 
 interface IssuePickerProps {
@@ -51,6 +54,7 @@ interface IssuePickerProps {
   initialBillTitle?: string | null;
   initialBillCongress?: string | null;
   initialBillType?: string | null;
+  userState?: string; // User's state for pre-filtering state bill searches
 }
 
 /**
@@ -112,7 +116,7 @@ function mapBillTitleToTopic(billTitle: string): string {
   return "OTHER";
 }
 
-export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillCongress, initialBillType }: IssuePickerProps) {
+export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillCongress, initialBillType, userState }: IssuePickerProps) {
   const [issue, setIssue] = useState<Issue>({
     stance: "support",
     topic: DEFAULT_TOPICS[0],
@@ -246,7 +250,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
     return null;
   }
 
-  // Debounced bill search
+  // Debounced unified bill search (federal + state)
   useEffect(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -259,11 +263,39 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
     debounceTimer.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/bills/search?q=${encodeURIComponent(billQuery)}`);
-        if (res.ok) {
-          const suggestions = await res.json();
-          setBillSuggestions(suggestions);
-        }
+        // Search both federal and state bills in parallel
+        const federalPromise = fetch(`/api/bills/search?q=${encodeURIComponent(billQuery)}`);
+        const statePromise = userState
+          ? fetch(`/api/bills/search-state?q=${encodeURIComponent(billQuery)}&jurisdiction=${encodeURIComponent(userState)}`)
+          : Promise.resolve(null);
+
+        const [federalRes, stateRes] = await Promise.all([federalPromise, statePromise]);
+
+        const federalBills: BillSuggestion[] = federalRes.ok ? await federalRes.json() : [];
+        const stateBillsData = stateRes && stateRes.ok ? await stateRes.json() : { bills: [] };
+
+        // Map state bills to BillSuggestion format
+        const stateBills: BillSuggestion[] = (stateBillsData.bills || []).map((bill: any) => ({
+          number: bill.bill,
+          title: bill.title,
+          titleShort: bill.title.length > 100 ? bill.title.substring(0, 100) + '...' : bill.title,
+          status: bill.latestAction || 'Introduced',
+          date: bill.introduced || '',
+          type: bill.chamber || 'state-bill',
+          level: 'state' as const,
+          jurisdiction: bill.jurisdiction,
+          session: bill.session,
+        }));
+
+        // Mark federal bills
+        const federalBillsWithLevel = federalBills.map(bill => ({
+          ...bill,
+          level: 'federal' as const,
+        }));
+
+        // Merge: state bills first (more relevant to user's location), then federal
+        const merged = [...stateBills, ...federalBillsWithLevel];
+        setBillSuggestions(merged);
       } catch (error) {
         console.error('Bill search error:', error);
       }
@@ -274,7 +306,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [billQuery]);
+  }, [billQuery, userState]);
 
   const showCustomTopicField = selectedTopicValue === "OTHER";
 
@@ -396,7 +428,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
             id="bill-number"
             type="text"
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="e.g., HR 1234 or search by title"
+            placeholder="e.g., HR 1234, CA AB 123, or search by title"
             value={billQuery}
             onChange={(e) => {
               setBillQuery(e.target.value);
@@ -424,17 +456,24 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                     update("billTitle", bill.title);
                     setShowSuggestions(false);
 
-                    // Fetch bill summary for better AI context
-                    setLoadingSummary(true);
-                    try {
-                      const summary = await fetchBillDetails(bill.congress, bill.type, bill.number.toString());
-                      if (summary) {
-                        update("billSummary", summary);
+                    // Only fetch summary for federal bills (state bills don't have congress/type)
+                    if (bill.level === 'federal' && bill.congress && bill.type) {
+                      setLoadingSummary(true);
+                      try {
+                        const summary = await fetchBillDetails(bill.congress, bill.type, bill.number.toString());
+                        if (summary) {
+                          update("billSummary", summary);
+                        }
+                      } catch (error) {
+                        console.error('Failed to fetch bill summary:', error);
+                      } finally {
+                        setLoadingSummary(false);
                       }
-                    } catch (error) {
-                      console.error('Failed to fetch bill summary:', error);
-                    } finally {
-                      setLoadingSummary(false);
+                    } else if (bill.level === 'state') {
+                      // For state bills, use the summary from Open States if available
+                      // State bills already have summary in the search results
+                      // We can expand this later to fetch more details if needed
+                      console.log('State bill selected:', bill);
                     }
 
                     // Auto-detect topic from bill title
@@ -445,7 +484,19 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                     }
                   }}
                 >
-                  <div className="font-semibold text-sm text-gray-900">{bill.number}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold text-sm text-gray-900">{bill.number}</div>
+                    {bill.level === 'state' && bill.jurisdiction && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        {bill.jurisdiction.split(' ')[0]} {/* Extract first word (state name) */}
+                      </span>
+                    )}
+                    {bill.level === 'federal' && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                        Federal
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-600 line-clamp-1">{bill.titleShort}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{bill.status}</div>
                 </button>
