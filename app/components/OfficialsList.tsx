@@ -31,12 +31,20 @@ export default function OfficialsList({ officials, issue, location }: {
   async function draftFor(official: Official) {
     if (!issue) return; // Safety check
     const input = { ...issue, ...location };
+
+    console.log("[DEBUG] Sending draft request with input:", input);
+
     const r = await fetch("/api/ai/draft", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ input, official }),
     });
     const json = await r.json();
+
+    if (!r.ok) {
+      console.error("[ERROR] Draft API failed:", r.status, json);
+    }
+
     if (json.text) setDrafts((d) => ({ ...d, [official.name + official.role]: json.text }));
   }
 

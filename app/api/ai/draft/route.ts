@@ -11,8 +11,13 @@ export async function POST(req: NextRequest) {
   if (!rl.ok) return new Response("Rate limit", { status: 429 });
 
   const body = await req.json().catch(() => ({}));
+
+  // Log the input for debugging
+  console.log("[DEBUG] Draft API input:", JSON.stringify(body.input, null, 2));
+
   const parsed = IssueDraftSchema.safeParse(body.input);
   if (!parsed.success) {
+    console.error("[ERROR] Validation failed:", JSON.stringify(parsed.error.flatten(), null, 2));
     return Response.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
