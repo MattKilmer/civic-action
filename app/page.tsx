@@ -25,6 +25,8 @@ function PageContent() {
   const [initialBillTitle, setInitialBillTitle] = useState<string | null>(null);
   const [initialBillCongress, setInitialBillCongress] = useState<string | null>(null);
   const [initialBillType, setInitialBillType] = useState<string | null>(null);
+  const [initialBillJurisdiction, setInitialBillJurisdiction] = useState<string | null>(null);
+  const [initialBillSession, setInitialBillSession] = useState<string | null>(null);
   const addressFormRef = useRef<HTMLElement>(null);
   const issuePickerRef = useRef<HTMLElement>(null);
 
@@ -55,6 +57,8 @@ function PageContent() {
     const titleParam = searchParams.get('billTitle');
     const congressParam = searchParams.get('billCongress');
     const typeParam = searchParams.get('billType');
+    const jurisdictionParam = searchParams.get('billJurisdiction'); // State bills
+    const sessionParam = searchParams.get('billSession'); // State bills
 
     if (billParam) {
       setInitialBillNumber(billParam);
@@ -66,6 +70,12 @@ function PageContent() {
       }
       if (typeParam) {
         setInitialBillType(typeParam);
+      }
+      if (jurisdictionParam) {
+        setInitialBillJurisdiction(jurisdictionParam);
+      }
+      if (sessionParam) {
+        setInitialBillSession(sessionParam);
       }
       // Small delay to ensure DOM is ready
       setTimeout(() => {
@@ -162,6 +172,8 @@ function PageContent() {
             initialBillTitle={initialBillTitle}
             initialBillCongress={initialBillCongress}
             initialBillType={initialBillType}
+            initialBillJurisdiction={initialBillJurisdiction}
+            initialBillSession={initialBillSession}
             userState={location?.state}
           />
         </section>

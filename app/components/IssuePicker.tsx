@@ -33,6 +33,8 @@ export type Issue = {
   personalImpact?: string;
   desiredAction?: string;
   tone?: "neutral" | "urgent" | "friendly";
+  jurisdiction?: string; // State name for state bills (e.g., "California")
+  session?: string; // Legislative session for state bills (e.g., "2025-2026")
 };
 
 interface BillSuggestion {
@@ -54,6 +56,8 @@ interface IssuePickerProps {
   initialBillTitle?: string | null;
   initialBillCongress?: string | null;
   initialBillType?: string | null;
+  initialBillJurisdiction?: string | null; // State name for state bills
+  initialBillSession?: string | null; // Legislative session for state bills
   userState?: string; // User's state for pre-filtering state bill searches
 }
 
@@ -116,7 +120,7 @@ function mapBillTitleToTopic(billTitle: string): string {
   return "OTHER";
 }
 
-export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillCongress, initialBillType, userState }: IssuePickerProps) {
+export default function IssuePicker({ onChange, initialBillNumber, initialBillTitle, initialBillCongress, initialBillType, initialBillJurisdiction, initialBillSession, userState }: IssuePickerProps) {
   const [issue, setIssue] = useState<Issue>({
     stance: "support",
     topic: DEFAULT_TOPICS[0],
@@ -163,9 +167,17 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
       update("bill", initialBillNumber);
 
+      // Store jurisdiction and session for state bills
+      if (initialBillJurisdiction) {
+        update("jurisdiction", initialBillJurisdiction);
+      }
+      if (initialBillSession) {
+        update("session", initialBillSession);
+      }
+
       isAutoDetectingRef.current = false; // Done auto-detecting
 
-      // Fetch bill summary if we have congress and type info
+      // Fetch bill summary if we have congress and type info (federal bills)
       if (initialBillCongress && initialBillType) {
         setLoadingSummary(true);
         fetchBillDetails(
@@ -470,6 +482,13 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                         setLoadingSummary(false);
                       }
                     } else if (bill.level === 'state') {
+                      // For state bills, store jurisdiction and session for proper official filtering
+                      if (bill.jurisdiction) {
+                        update("jurisdiction", bill.jurisdiction);
+                      }
+                      if (bill.session) {
+                        update("session", bill.session);
+                      }
                       // For state bills, use the summary from Open States if available
                       // State bills already have summary in the search results
                       // We can expand this later to fetch more details if needed

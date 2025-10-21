@@ -41,7 +41,9 @@ export default function OfficialsList({ officials, issue, location }: {
   }
 
   // Determine bill info and enrich officials with voting info
-  const billInfo = getBillInfo(issue?.bill, location?.state);
+  // For state bills, use issue.jurisdiction; for federal bills, use location.state
+  const billJurisdiction = issue?.jurisdiction || location?.state;
+  const billInfo = getBillInfo(issue?.bill, billJurisdiction);
   const enrichedOfficials: EnrichedOfficial[] = officials.map(official => ({
     ...official,
     canVote: canOfficialVoteOnBill(official.role, billInfo, official.state)
