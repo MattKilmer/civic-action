@@ -165,6 +165,11 @@ export async function searchStateBills(params: {
 
       const data: OpenStatesSearchResponse = await response.json();
 
+      // Debug: Log first result to see what data we're getting
+      if (data.results.length > 0) {
+        console.log("Sample bill data:", JSON.stringify(data.results[0], null, 2));
+      }
+
       // Normalize to our format and filter out null results (bills with incomplete data)
       const bills: NormalizedStateBill[] = data.results
         .map(mapOpenStatesBillToNormalized)
