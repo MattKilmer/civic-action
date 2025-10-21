@@ -44,9 +44,15 @@ export async function GET(req: NextRequest) {
     });
 
     if (result.error) {
+      // Return appropriate status code based on error type
+      const status = result.error.includes("Rate limit") ? 429
+                   : result.error.includes("not configured") ? 503
+                   : 502; // Bad Gateway for Open States API errors
+
+      console.error("State bill search failed:", result.error);
       return NextResponse.json(
         { error: result.error, bills: [] },
-        { status: 503 }
+        { status }
       );
     }
 

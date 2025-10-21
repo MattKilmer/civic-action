@@ -142,10 +142,16 @@ export async function searchStateBills(params: {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Open States API error:", response.status, errorText);
+      console.error("Open States API error:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        url,
+        apiKeyConfigured: !!API_KEY
+      });
       return {
         bills: [],
-        error: `State bill search failed (${response.status})`
+        error: `State bill search failed (${response.status}: ${response.statusText})`
       };
     }
 
