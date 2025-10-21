@@ -38,18 +38,20 @@ function checkRateLimit(): boolean {
  */
 export interface OpenStatesBill {
   id: string;
-  identifier: string; // e.g., "AB 123"
+  identifier: string; // e.g., "A 1245"
   title: string;
   classification: string[]; // e.g., ["bill"], ["resolution"]
   subject: string[];
-  chamber: string; // "upper" (senate) or "lower" (house)
-  legislative_session: {
-    identifier: string; // e.g., "2023-2024"
-    jurisdiction: {
-      id: string;
-      name: string; // e.g., "California"
-      classification: string;
-    };
+  session: string; // e.g., "2025-2026"
+  jurisdiction: {
+    id: string;
+    name: string; // e.g., "New York"
+    classification: string;
+  };
+  from_organization: {
+    id: string;
+    name: string; // e.g., "Assembly", "Senate"
+    classification: string; // "lower", "upper"
   };
   abstracts?: Array<{
     abstract: string;
@@ -65,6 +67,7 @@ export interface OpenStatesBill {
   first_action_date: string | null;
   latest_action_date: string | null;
   latest_action_description: string | null;
+  openstates_url: string;
 }
 
 export interface OpenStatesSearchResponse {
@@ -270,12 +273,12 @@ export async function getStateBill(params: {
  */
 function mapOpenStatesBillToNormalized(bill: OpenStatesBill): NormalizedStateBill | null {
   // Defensive checks for required fields
-  if (!bill.legislative_session?.jurisdiction?.name) {
+  if (!bill.jurisdiction?.name) {
     console.warn("Bill missing jurisdiction data:", bill.id);
     return null;
   }
 
-  const jurisdiction = bill.legislative_session.jurisdiction.name;
+  const jurisdiction = bill.jurisdiction.name;
   const stateAbbr = getStateAbbreviation(jurisdiction);
 
   return {
@@ -284,8 +287,8 @@ function mapOpenStatesBillToNormalized(bill: OpenStatesBill): NormalizedStateBil
     summary: bill.abstracts?.[0]?.abstract,
     level: "state",
     jurisdiction,
-    session: bill.legislative_session.identifier,
-    chamber: bill.chamber === "upper" ? "state-senate" : "state-house",
+    session: bill.session,
+    chamber: bill.from_organization.classification === "upper" ? "state-senate" : "state-house",
     introduced: bill.first_action_date || undefined,
     latestAction: bill.latest_action_description || undefined,
     sponsors: bill.sponsorships
