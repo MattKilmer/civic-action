@@ -44,6 +44,12 @@ export default function TopNav() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             <Link
+              href="/bills"
+              className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1"
+            >
+              Bills
+            </Link>
+            <Link
               href="/about"
               className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1"
             >
@@ -90,6 +96,13 @@ export default function TopNav() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4 space-y-2">
+            <Link
+              href="/bills"
+              className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-md transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Bills
+            </Link>
             <Link
               href="/about"
               className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-md transition-colors"
