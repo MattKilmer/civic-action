@@ -149,6 +149,11 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
       setBillQuery(initialBillNumber);
 
+      // Build the complete issue update object to avoid multiple state changes
+      const issueUpdates: Partial<Issue> = {
+        bill: initialBillNumber,
+      };
+
       // Auto-detect topic from bill title
       if (initialBillTitle) {
         const detectedTopic = mapBillTitleToTopic(initialBillTitle);
@@ -156,30 +161,31 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         if (detectedTopic === "OTHER") {
           setSelectedTopicValue("OTHER");
           setCustomTopic(initialBillTitle);
-          update("topic", initialBillTitle);
+          issueUpdates.topic = initialBillTitle;
         } else {
           setSelectedTopicValue(detectedTopic);
-          update("topic", detectedTopic);
+          issueUpdates.topic = detectedTopic;
         }
 
         // Store bill title for AI context
-        update("billTitle", initialBillTitle);
+        issueUpdates.billTitle = initialBillTitle;
       }
-
-      update("bill", initialBillNumber);
 
       // Store jurisdiction and session for state bills
       if (initialBillJurisdiction) {
-        update("jurisdiction", initialBillJurisdiction);
+        issueUpdates.jurisdiction = initialBillJurisdiction;
       }
       if (initialBillSession) {
-        update("session", initialBillSession);
+        issueUpdates.session = initialBillSession;
       }
 
       // If summary is provided in URL (state bills), use it directly
       if (initialBillSummary) {
-        update("billSummary", initialBillSummary);
+        issueUpdates.billSummary = initialBillSummary;
       }
+
+      // Apply all updates in a single state change to avoid multiple renders
+      setIssue(prev => ({ ...prev, ...issueUpdates }));
 
       isAutoDetectingRef.current = false; // Done auto-detecting
 
