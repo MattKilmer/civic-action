@@ -159,9 +159,10 @@ export default function BillExplorerPage() {
     }
   }, []);
 
-  // Filter bills by status on client side
+  // Filter bills by status on client side (only applies to federal bills)
   const filterByStatus = (billsList: Bill[]) => {
-    if (statusFilter === 'all') return billsList;
+    // Skip status filtering for state bills
+    if (billLevel === 'state' || statusFilter === 'all') return billsList;
 
     return billsList.filter((bill) => {
       const status = bill.status.toLowerCase();
@@ -526,27 +527,29 @@ export default function BillExplorerPage() {
 
             {/* Filters Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Status Filter */}
-              <div>
-                <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-2">
-                  Bill Status
-                </label>
-                <select
-                  id="statusFilter"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setDisplayLimit(50); // Reset display limit when changing filter
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  {STATUS_FILTERS.map((status) => (
-                    <option key={status.value} value={status.value} title={status.description}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Status Filter - Only for Federal Bills */}
+              {billLevel === 'federal' && (
+                <div>
+                  <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-2">
+                    Bill Status
+                  </label>
+                  <select
+                    id="statusFilter"
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setDisplayLimit(50); // Reset display limit when changing filter
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  >
+                    {STATUS_FILTERS.map((status) => (
+                      <option key={status.value} value={status.value} title={status.description}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Conditional Filter: Bill Type (Federal) or State (State Bills) */}
               {billLevel === 'federal' ? (
