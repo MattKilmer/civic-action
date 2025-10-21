@@ -129,8 +129,9 @@ export async function searchStateBills(params: {
     searchParams.set("page", String(params.page || 1));
     searchParams.set("per_page", String(params.perPage || 20));
 
-    // Include sponsorships and abstracts in response
-    searchParams.set("include", "abstracts,sponsorships");
+    // Include sponsorships and abstracts in response (append each separately)
+    searchParams.append("include", "abstracts");
+    searchParams.append("include", "sponsorships");
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
@@ -188,7 +189,8 @@ export async function getStateBill(params: {
     searchParams.set("jurisdiction", params.jurisdiction);
     searchParams.set("session", params.session);
     searchParams.set("identifier", params.identifier);
-    searchParams.set("include", "abstracts,sponsorships");
+    searchParams.append("include", "abstracts");
+    searchParams.append("include", "sponsorships");
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
