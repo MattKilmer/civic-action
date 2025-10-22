@@ -39,8 +39,9 @@ export async function GET(req: NextRequest) {
     const productionUrl = process.env.NEXT_PUBLIC_APP_URL || "https://takecivicaction.org";
 
     // Warm up the 4 most populous states to cover ~40% of US population
-    // CA: 39M, TX: 30M, FL: 22M, NY: 19M (total: 110M / 330M = 33%)
-    const statesToWarmup = ["California", "Texas", "Florida", "New York"];
+    // Ordered by priority: NY first (current user need), then by population
+    // NY: 19M, CA: 39M, TX: 30M, FL: 22M (total: 110M / 330M = 33%)
+    const statesToWarmup = ["New York", "California", "Texas", "Florida"];
 
     console.log(`[Warmup] Starting warmup for ${statesToWarmup.length} states`);
 
@@ -48,29 +49,50 @@ export async function GET(req: NextRequest) {
       statesToWarmup.map(async (state) => {
         const warmupUrl = `${productionUrl}/api/bills/search-state?q=budget&jurisdiction=${encodeURIComponent(state)}`;
 
-        const response = await fetch(warmupUrl, {
-          headers: {
-            "User-Agent": "Vercel-Cron-Warmup",
-          },
-        });
+        // Add timeout to prevent any single state from holding up the whole warmup
+        // Each state gets max 5 seconds (4 states * 5s = 20s total, under 25s limit)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        console.log(`[Warmup] ${state}: ${response.status}`);
+        try {
+          const response = await fetch(warmupUrl, {
+            headers: {
+              "User-Agent": "Vercel-Cron-Warmup",
+            },
+            signal: controller.signal,
+          });
 
-        // Try to parse JSON, but handle non-JSON responses gracefully
-        let billsFound = 0;
-        const contentType = response.headers.get("content-type");
+          clearTimeout(timeoutId);
+          console.log(`[Warmup] ${state}: ${response.status}`);
 
-        if (contentType?.includes("application/json")) {
-          const data = await response.json();
-          billsFound = data?.bills?.length || 0;
+          // Try to parse JSON, but handle non-JSON responses gracefully
+          let billsFound = 0;
+          const contentType = response.headers.get("content-type");
+
+          if (contentType?.includes("application/json")) {
+            const data = await response.json();
+            billsFound = data?.bills?.length || 0;
+          }
+
+          return {
+            state,
+            status: response.status,
+            success: response.ok,
+            billsFound,
+          };
+        } catch (error) {
+          clearTimeout(timeoutId);
+          // Timeout or other error
+          const isTimeout = error instanceof Error && error.name === 'AbortError';
+          console.log(`[Warmup] ${state}: ${isTimeout ? 'timeout (5s)' : 'error'}`);
+
+          return {
+            state,
+            status: 0,
+            success: false,
+            error: isTimeout ? 'timeout' : 'error',
+          };
         }
-
-        return {
-          state,
-          status: response.status,
-          success: response.ok,
-          billsFound,
-        };
       })
     );
 
