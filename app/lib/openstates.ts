@@ -62,11 +62,11 @@ function setInCache(key: string, data: { bills: NormalizedStateBill[] }): void {
   // Clean up old entries (keep cache size reasonable)
   if (searchCache.size > 100) {
     const now = Date.now();
-    for (const [k, v] of searchCache.entries()) {
+    searchCache.forEach((v, k) => {
       if (now - v.timestamp > CACHE_TTL) {
         searchCache.delete(k);
       }
-    }
+    });
   }
 }
 
