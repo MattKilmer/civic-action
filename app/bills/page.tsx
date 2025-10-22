@@ -17,7 +17,8 @@ interface Bill {
   level?: 'federal' | 'state';
   jurisdiction?: string;
   session?: string;
-  url?: string; // OpenStates.org URL for state bills
+  url?: string; // LegiScan.com URL for state bills
+  bill_id?: number; // LegiScan bill_id for fetching full details
 }
 
 const BILL_TYPES = [
@@ -260,13 +261,14 @@ export default function BillExplorerPage() {
             number: bill.bill,
             title: bill.title,
             status: bill.latestAction || 'Introduced',
-            date: bill.introduced || '',
+            date: bill.latestActionDate || bill.introduced || '', // Use last action date if available
             type: bill.chamber || 'state-bill',
             level: 'state' as const,
             jurisdiction: bill.jurisdiction,
             session: bill.session,
             summary: bill.summary,
-            url: bill.url, // OpenStates.org URL
+            url: bill.url, // LegiScan.com URL
+            bill_id: bill.bill_id, // LegiScan bill_id for fetching full details
           }));
 
           setBills(mappedBills);
@@ -326,13 +328,14 @@ export default function BillExplorerPage() {
         number: bill.bill,
         title: bill.title,
         status: bill.latestAction || 'Introduced',
-        date: bill.introduced || '',
+        date: bill.latestActionDate || bill.introduced || '', // Use last action date if available
         type: bill.chamber || 'state-bill',
         level: 'state' as const,
         jurisdiction: bill.jurisdiction,
         session: bill.session,
         summary: bill.summary,
-        url: bill.url, // OpenStates.org URL
+        url: bill.url, // LegiScan.com URL
+        bill_id: bill.bill_id, // LegiScan bill_id for fetching full details
       }));
 
       // Append new bills to existing ones
@@ -398,15 +401,31 @@ export default function BillExplorerPage() {
     setLoadingSummary(bill.number);
 
     try {
-      const billNum = bill.number.split(' ')[1];
-      const res = await fetch(`/api/bills/${bill.congress}/${bill.type}/${billNum}`);
+      let res: Response;
+
+      if (bill.level === 'state') {
+        // State bill - use LegiScan endpoint
+        if (!bill.bill_id) {
+          console.error('State bill missing bill_id:', bill);
+          setLoadingSummary(null);
+          return;
+        }
+        res = await fetch(`/api/bills/state/${bill.bill_id}`);
+      } else {
+        // Federal bill - use Congress.gov endpoint
+        const billNum = bill.number.split(' ')[1];
+        res = await fetch(`/api/bills/${bill.congress}/${bill.type}/${billNum}`);
+      }
+
       if (res.ok) {
         const details = await res.json();
-        if (details.summary) {
+        const summary = bill.level === 'state' ? details.bill?.summary : details.summary;
+
+        if (summary) {
           // Update the bill in the bills array with the summary
           setBills(prevBills =>
             prevBills.map(b =>
-              b.number === bill.number ? { ...b, summary: details.summary } : b
+              b.number === bill.number ? { ...b, summary } : b
             )
           );
         }
@@ -831,11 +850,11 @@ export default function BillExplorerPage() {
                       {bill.status}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(bill.date).toLocaleDateString('en-US', {
+                      {bill.date ? new Date(bill.date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
-                      })}
+                      }) : 'Date not available'}
                     </p>
                   </div>
 
@@ -874,7 +893,7 @@ export default function BillExplorerPage() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 mt-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                     >
-                      View on OpenStates.org
+                      View on LegiScan.com
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>

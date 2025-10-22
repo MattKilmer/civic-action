@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchStateBills } from "@/app/lib/openstates";
+import { searchStateBills } from "@/app/lib/legiscan";
 import { rateLimit } from "@/app/lib/rateLimit";
 
 export const runtime = "edge";
 
 /**
- * State bill search endpoint using Open States API
- * GET /api/bills/search-state?q=education&jurisdiction=California&session=2023-2024
+ * State bill search endpoint using LegiScan API
+ * GET /api/bills/search-state?q=education&jurisdiction=California
  */
 export async function GET(req: NextRequest) {
   // Rate limiting: 15 requests per minute (same as federal bill search)
@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const query = searchParams.get("q");
   const jurisdiction = searchParams.get("jurisdiction"); // Optional: filter by state
-  const session = searchParams.get("session"); // Optional: filter by legislative session
   const page = searchParams.get("page"); // Optional: page number for pagination
 
   // Validate query
@@ -40,7 +39,6 @@ export async function GET(req: NextRequest) {
     const result = await searchStateBills({
       query: query.trim(),
       jurisdiction: jurisdiction || undefined,
-      session: session || undefined,
       page: page ? parseInt(page, 10) : undefined,
       perPage: 20,
     });
@@ -49,7 +47,7 @@ export async function GET(req: NextRequest) {
       // Return appropriate status code based on error type
       const status = result.error.includes("Rate limit") ? 429
                    : result.error.includes("not configured") ? 503
-                   : 502; // Bad Gateway for Open States API errors
+                   : 502; // Bad Gateway for LegiScan API errors
 
       console.error("State bill search failed:", result.error);
       return NextResponse.json(

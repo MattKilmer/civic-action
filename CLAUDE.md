@@ -39,7 +39,7 @@ npm run lint         # Run ESLint
    - **Dropdown Selection**: Choose from 10 research-backed topics or "Other" (reveals custom field)
    - **Optional Bill Search**: Types bill number/title → debounced **unified search** via:
      - `/api/bills/search` (Federal bills - Congress.gov API)
-     - `/api/bills/search-state?jurisdiction={state}` (State bills - Open States API)
+     - `/api/bills/search-state?jurisdiction={state}` (State bills - LegiScan API)
    - **Merged Results**: State bills shown first (more relevant to user's location), then federal bills
    - **Visual Distinction**: Green "California" badges for state bills, blue "Federal" badges for federal bills
    - **Optional Autocomplete**: Selects bill from autocomplete dropdown → topic auto-detected from bill title
@@ -119,7 +119,7 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     /ai/draft/route.ts      # Email draft generation (OpenAI)
     /bills
       /search/route.ts      # Federal bill search (Congress.gov API)
-      /search-state/route.ts # State bill search (Open States API) **NEW**
+      /search-state/route.ts # State bill search (LegiScan API)
       /[congress]/[type]/[number]/route.ts # Federal bill details
   /actions
     draftEmail.ts           # Core AI drafting logic
@@ -137,7 +137,7 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas (includes BillSchema, BillLevel)
     billVoting.ts           # Bill chamber detection + official voting eligibility **ENHANCED**
-    openstates.ts           # Open States API v3 client for state bills **NEW**
+    legiscan.ts             # LegiScan API client for state bills
   page.tsx                  # Main page with state coordination + URL param handling
   layout.tsx                # Root layout with metadata and JSON-LD
   sitemap.ts                # Auto-generated sitemap.xml (includes /bills)
@@ -161,10 +161,10 @@ All external inputs flow through Zod schemas in `lib/schemas.ts`:
 Required in `.env.local`:
 - `OPENAI_API_KEY` - OpenAI API key (required for email drafting)
 - `CONGRESS_API_KEY` - Congress.gov API key (optional for federal bill autocomplete)
-- `OPENSTATES_API_KEY` - Open States API key (optional for state bill autocomplete) **NEW**
+- `LEGISCAN_API_KEY` - LegiScan API key (optional for state bill autocomplete)
 - `APP_BASE_URL` - Base URL (optional, mainly for development)
 
-**Note**: The 5 Calls API requires no authentication. Congress.gov and Open States APIs are optional—bill autocomplete will gracefully degrade if not provided.
+**Note**: The 5 Calls API requires no authentication. Congress.gov and LegiScan APIs are optional—bill autocomplete will gracefully degrade if not provided.
 
 See `.env.local.example` for setup instructions.
 
@@ -212,32 +212,33 @@ See `.env.local.example` for setup instructions.
 - 1-hour caching via Next.js revalidation
 - Graceful degradation: feature is optional if API key not provided
 
-**Open States API** (`/api/bills/search-state/route.ts`, `lib/openstates.ts`): **NEW**
-- API endpoint: `https://v3.openstates.org/bills`
-- Requires free API key (register at openstates.org/api/register/)
-- **Rate Limits**: 10 requests/minute, 500 requests/day (free tier)
-- Covers all 50 states + DC + Puerto Rico
+**LegiScan API** (`/api/bills/search-state/route.ts`, `lib/legiscan.ts`):
+- API endpoint: `https://api.legiscan.com`
+- Requires free API key (register at legiscan.com/legiscan-register)
+- **Rate Limits**: 30,000 requests/month (free tier) - much more generous than previous provider
+- Covers all 50 states + DC + Puerto Rico + Congress
 - Searches state legislature bills by query and jurisdiction
 - Query parameters:
-  - `q` - Search query (bill number or keywords)
-  - `jurisdiction` - State name (e.g., "California") - pre-filtered to user's state
-  - `session` - Legislative session (optional, e.g., "2023-2024")
-  - `include` - Include related data (abstracts, sponsorships)
-- Returns: bill identifier (e.g., "AB 123"), title, chamber, jurisdiction, session, sponsors, abstracts, latest action
-- **Bill Format Detection**: Automatically detects state bills by format (e.g., "CA AB 123")
-  - Extracts state abbreviation, determines chamber (Assembly/House vs Senate)
+  - `key` - API key
+  - `op` - Operation (getSearch, getBill, etc.)
+  - `query` - Search query (bill number or keywords)
+  - `state` - State abbreviation (e.g., "CA", "NY") - optional, pre-filtered to user's state
+- Returns: bill identifier (e.g., "S03376", "A03420"), title, chamber, jurisdiction, session, sponsors, description, latest action
+- **Bill Format Detection**: Automatically detects state bills by format (e.g., "NY S 3376")
+  - Extracts state abbreviation, determines chamber (S/Senate vs A/H/Assembly/House)
   - Maps to full state name for jurisdiction matching
-- **Normalized Response**: Converts Open States format to match federal bill structure for UI consistency
+- **Normalized Response**: Converts LegiScan format to match federal bill structure for UI consistency
 - **Unified Search**: Merged with federal bills in `IssuePicker.tsx`
   - State bills shown first (more relevant to user's location)
   - Federal bills shown second
   - Visual distinction via green "California" vs blue "Federal" badges
 - **Voting Power Integration**: State bills matched to state legislators via jurisdiction
-  - "CA AB 123" → only CA state legislators get "Can vote" badge
-  - Prevents false matches (e.g., TX legislator on CA bill)
+  - "NY S 3376" → only NY state legislators get "Can vote" badge
+  - Prevents false matches (e.g., TX legislator on NY bill)
 - Debounced search (300ms) to reduce API calls
-- In-memory rate limiting (10 req/min as per API limits)
+- In-memory rate limiting (100 req/min)
 - Graceful degradation: returns empty array with error message if API key not provided or rate limit exceeded
+- **Reliability**: LegiScan is generally faster and more reliable than previous Open States API, with better rate limits
 
 ## Styling
 

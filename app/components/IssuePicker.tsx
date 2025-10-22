@@ -48,6 +48,7 @@ interface BillSuggestion {
   level?: "federal" | "state"; // "federal" or "state"
   jurisdiction?: string; // State name for state bills
   session?: string; // Legislative session for state bills
+  bill_id?: number; // LegiScan bill_id for state bills (for fetching full details)
 }
 
 interface IssuePickerProps {
@@ -265,7 +266,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
     }
   }
 
-  // Fetch bill details including summary
+  // Fetch federal bill details including summary
   async function fetchBillDetails(congress: number, type: string, billNumber: string) {
     // Guard: Only fetch for valid federal bills
     // State bills have type="state-house" or "state-senate" and should not use this endpoint
@@ -290,6 +291,26 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
       }
     } catch (error) {
       console.error('[IssuePicker] Bill details fetch error:', error);
+    }
+    return null;
+  }
+
+  // Fetch state bill details including summary
+  async function fetchStateBillDetails(billId: number) {
+    try {
+      console.log(`[IssuePicker] Fetching state bill summary: billId=${billId}`);
+      const url = `/api/bills/state/${billId}`;
+      console.log(`[IssuePicker] Fetching from: ${url}`);
+      const res = await fetch(url);
+      if (res.ok) {
+        const details = await res.json();
+        console.log(`[IssuePicker] Got state bill summary:`, details.bill?.summary?.substring(0, 100));
+        return details.bill?.summary;
+      } else {
+        console.error(`[IssuePicker] State bill details fetch failed: ${res.status} ${res.statusText}`);
+      }
+    } catch (error) {
+      console.error('[IssuePicker] State bill details fetch error:', error);
     }
     return null;
   }
@@ -325,6 +346,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         level: 'state' as const,
         jurisdiction: bill.jurisdiction,
         session: bill.session,
+        bill_id: bill.bill_id, // Include LegiScan bill_id for fetching full details
       }));
 
       // Mark federal bills
@@ -545,10 +567,23 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                       if (bill.session) {
                         update("session", bill.session);
                       }
-                      // For state bills, use the summary from Open States if available
-                      // State bills already have summary in the search results
-                      // We can expand this later to fetch more details if needed
-                      console.log('State bill selected:', bill);
+
+                      // Fetch full bill details including summary from LegiScan
+                      if (bill.bill_id) {
+                        setLoadingSummary(true);
+                        try {
+                          const summary = await fetchStateBillDetails(bill.bill_id);
+                          if (summary) {
+                            update("billSummary", summary);
+                          }
+                        } catch (error) {
+                          console.error('Failed to fetch state bill summary:', error);
+                        } finally {
+                          setLoadingSummary(false);
+                        }
+                      } else {
+                        console.warn('State bill selected but no bill_id available:', bill);
+                      }
                     }
 
                     // Auto-detect topic from bill title

@@ -4,7 +4,9 @@ export const runtime = "edge";
 
 /**
  * Warmup cron job to prevent cold starts on state bill search
- * Runs every 3 minutes to keep the Edge function warm
+ * Runs every 3 minutes to keep the Edge function and LegiScan API warm
+ *
+ * Note: Now using LegiScan API (faster and more reliable than previous provider)
  *
  * To enable:
  * 1. Deploy to Vercel
@@ -50,9 +52,10 @@ export async function GET(req: NextRequest) {
         const warmupUrl = `${productionUrl}/api/bills/search-state?q=budget&jurisdiction=${encodeURIComponent(state)}`;
 
         // Add timeout to prevent any single state from holding up the whole warmup
-        // Each state gets max 10 seconds (all run in parallel, so total = 10s)
+        // LegiScan is much faster than previous provider, so 5s should be plenty
+        // Each state gets max 5 seconds (all run in parallel, so total = 5s)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
         try {
           const response = await fetch(warmupUrl, {
@@ -84,7 +87,7 @@ export async function GET(req: NextRequest) {
           clearTimeout(timeoutId);
           // Timeout or other error
           const isTimeout = error instanceof Error && error.name === 'AbortError';
-          console.log(`[Warmup] ${state}: ${isTimeout ? 'timeout (10s)' : 'error'}`);
+          console.log(`[Warmup] ${state}: ${isTimeout ? 'timeout (5s)' : 'error'}`);
 
           return {
             state,

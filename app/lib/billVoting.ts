@@ -133,10 +133,19 @@ export function canOfficialVoteOnBill(
 
   // State House
   if (billInfo.chamber === 'state-house') {
+    // Explicitly exclude federal representatives
+    const isFederalRep =
+      roleLower.includes('representative in the house') ||  // "This is your representative in the House."
+      roleLower.includes('u.s. representative') ||
+      (roleLower.includes('house') && !roleLower.includes('state'));
+
+    if (isFederalRep) return false;
+
+    // Must be state-level legislator
     const isStateRep = (
       (roleLower.includes('assembly') || roleLower.includes('delegate') ||
-       roleLower.includes('representative') || roleLower.includes('house')) &&
-      (roleLower.includes('state') || !roleLower.includes('federal'))
+       roleLower.includes('representative') || roleLower.includes('legislator')) &&
+      roleLower.includes('state')
     );
 
     if (!isStateRep) return false;
@@ -151,9 +160,18 @@ export function canOfficialVoteOnBill(
 
   // State Senate
   if (billInfo.chamber === 'state-senate') {
+    // Explicitly exclude federal senators
+    const isFederalSenator =
+      roleLower.includes('two senators') ||  // "This is one of your two Senators."
+      roleLower.includes('u.s. senator') ||
+      roleLower.includes('senator') && !roleLower.includes('state');
+
+    if (isFederalSenator) return false;
+
+    // Must be state-level legislator (some states use "legislator" instead of "senator")
     const isStateSenator = (
-      roleLower.includes('senator') &&
-      (roleLower.includes('state') || !roleLower.includes('federal'))
+      (roleLower.includes('senator') || roleLower.includes('legislator')) &&
+      roleLower.includes('state')
     );
 
     if (!isStateSenator) return false;

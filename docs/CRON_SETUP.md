@@ -6,9 +6,10 @@ This project uses a Vercel Cron job to keep the state bill search API warm and p
 
 - **Endpoint**: `/api/cron/warmup`
 - **Schedule**: Every 3 minutes (`*/3 * * * *`)
-- **Purpose**: Makes lightweight requests to the state bill search API to keep it warm
-- **States Warmed**: California, Texas, Florida, New York (covers ~33% of US population)
+- **Purpose**: Makes lightweight requests to the state bill search API (LegiScan) to keep it warm
+- **States Warmed**: New York, California, Texas, Florida (covers ~33% of US population)
 - **Prevents**: Cold start timeouts that cause "operation was aborted" errors
+- **API**: Now using LegiScan (faster and more reliable than previous Open States provider)
 
 ## Setup Instructions
 
