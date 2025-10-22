@@ -127,6 +127,7 @@ function getFullStateName(abbr: string): string | null {
 export default function BillExplorerPage() {
   const [billLevel, setBillLevel] = useState<'federal' | 'state'>('federal');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // User input before submitting
   const [billType, setBillType] = useState('all');
   const [selectedState, setSelectedState] = useState('all');
   const [userState, setUserState] = useState<string | null>(null); // User's state from session
@@ -144,8 +145,6 @@ export default function BillExplorerPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalStateBills, setTotalStateBills] = useState(0);
   const [maxPage, setMaxPage] = useState(1);
-
-  const debounceTimer = useRef<NodeJS.Timeout>();
 
   // Load user's state from session storage on mount
   useEffect(() => {
@@ -191,13 +190,9 @@ export default function BillExplorerPage() {
     });
   };
 
-  // Fetch bills with current filters
+  // Fetch bills with current filters - triggered by searchQuery changes (button click)
   useEffect(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    debounceTimer.current = setTimeout(async () => {
+    const fetchBills = async () => {
       setLoading(true);
       setError('');
 
@@ -284,14 +279,22 @@ export default function BillExplorerPage() {
       } finally {
         setLoading(false);
       }
-    }, 300);
-
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
     };
+
+    fetchBills();
   }, [searchQuery, billType, selectedState, sortOrder, billLevel]);
+
+  // Handle search submission
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
+  };
+
+  // Handle Enter key press in search input
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // Apply status filter and display limit
   const filteredBills = filterByStatus(bills).slice(0, displayLimit);
@@ -481,6 +484,7 @@ export default function BillExplorerPage() {
                 setBillLevel('federal');
                 setBills([]);
                 setSearchQuery('');
+                setSearchInput('');
                 setBillType('all');
                 setStatusFilter('active');
               }}
@@ -497,6 +501,7 @@ export default function BillExplorerPage() {
                 setBillLevel('state');
                 setBills([]);
                 setSearchQuery('');
+                setSearchInput('');
                 // Default to user's state if available, otherwise 'all'
                 setSelectedState(userState || 'all');
                 setStatusFilter('all');
@@ -520,18 +525,31 @@ export default function BillExplorerPage() {
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                 Search by bill number or keywords
               </label>
-              <input
-                id="search"
-                type="text"
-                placeholder={
-                  billLevel === 'federal'
-                    ? "e.g., HR 1234 or climate change"
-                    : "e.g., AB 123 or education funding"
-                }
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+              <div className="flex gap-2">
+                <input
+                  id="search"
+                  type="text"
+                  placeholder={
+                    billLevel === 'federal'
+                      ? "e.g., HR 1234 or climate change"
+                      : "e.g., AB 123 or education funding"
+                  }
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-900 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+                <button
+                  onClick={handleSearch}
+                  className={`px-6 py-3 ${
+                    billLevel === 'federal'
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-emerald-600 hover:bg-emerald-700'
+                  } text-white font-medium rounded-xl transition-colors whitespace-nowrap`}
+                >
+                  Search
+                </button>
+              </div>
             </div>
 
             {/* Filters Row */}
@@ -645,6 +663,8 @@ export default function BillExplorerPage() {
                 <button
                   onClick={() => {
                     setStatusFilter('all');
+                    setSearchQuery('');
+                    setSearchInput('');
                     if (billLevel === 'federal') {
                       setBillType('all');
                     } else {
@@ -706,6 +726,7 @@ export default function BillExplorerPage() {
               <button
                 onClick={() => {
                   setSearchQuery('');
+                  setSearchInput('');
                   if (billLevel === 'federal') {
                     setBillType('all');
                     setStatusFilter('all');

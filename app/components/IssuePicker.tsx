@@ -130,11 +130,12 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   const [selectedTopicValue, setSelectedTopicValue] = useState<string>(DEFAULT_TOPICS[0]);
   const [customTopic, setCustomTopic] = useState<string>("");
   const [billQuery, setBillQuery] = useState("");
+  const [billSearchInput, setBillSearchInput] = useState(""); // User input before submitting search
   const [billSuggestions, setBillSuggestions] = useState<BillSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(true);
-  const debounceTimer = useRef<NodeJS.Timeout>();
+  const [searchingBills, setSearchingBills] = useState(false);
   const isAutoDetectingRef = useRef(false); // Track if we're auto-detecting topic from bill
 
   // Call onChange whenever issue state changes
@@ -148,6 +149,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
       isAutoDetectingRef.current = true; // Flag that we're auto-detecting
 
       setBillQuery(initialBillNumber);
+      setBillSearchInput(initialBillNumber);
 
       // Build the complete issue update object to avoid multiple state changes
       const issueUpdates: Partial<Issue> = {
@@ -239,6 +241,8 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
       console.log('[IssuePicker.handleTopicChange] MANUAL topic change - clearing bill fields (bill, billTitle, billSummary) and setting new topic');
       // Clear bill-related fields AND set new topic in ONE update using functional setState
       setBillQuery("");
+      setBillSearchInput("");
+      setBillSuggestions([]);
       setIssue(prev => ({
         ...prev,
         bill: undefined,
@@ -283,63 +287,68 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
     return null;
   }
 
-  // Debounced unified bill search (federal + state)
-  useEffect(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    if (billQuery.length < 2) {
+  // Manual bill search function (federal + state)
+  const searchBills = async (query: string) => {
+    if (query.length < 2) {
       setBillSuggestions([]);
       return;
     }
 
-    debounceTimer.current = setTimeout(async () => {
-      try {
-        // Search both federal and state bills in parallel
-        const federalPromise = fetch(`/api/bills/search?q=${encodeURIComponent(billQuery)}`);
-        const statePromise = userState
-          ? fetch(`/api/bills/search-state?q=${encodeURIComponent(billQuery)}&jurisdiction=${encodeURIComponent(userState)}`)
-          : Promise.resolve(null);
+    setSearchingBills(true);
+    try {
+      // Search both federal and state bills in parallel
+      const federalPromise = fetch(`/api/bills/search?q=${encodeURIComponent(query)}`);
+      const statePromise = userState
+        ? fetch(`/api/bills/search-state?q=${encodeURIComponent(query)}&jurisdiction=${encodeURIComponent(userState)}`)
+        : Promise.resolve(null);
 
-        const [federalRes, stateRes] = await Promise.all([federalPromise, statePromise]);
+      const [federalRes, stateRes] = await Promise.all([federalPromise, statePromise]);
 
-        const federalBills: BillSuggestion[] = federalRes.ok ? await federalRes.json() : [];
-        const stateBillsData = stateRes && stateRes.ok ? await stateRes.json() : { bills: [] };
+      const federalBills: BillSuggestion[] = federalRes.ok ? await federalRes.json() : [];
+      const stateBillsData = stateRes && stateRes.ok ? await stateRes.json() : { bills: [] };
 
-        // Map state bills to BillSuggestion format
-        const stateBills: BillSuggestion[] = (stateBillsData.bills || []).map((bill: any) => ({
-          number: bill.bill,
-          title: bill.title,
-          titleShort: bill.title.length > 100 ? bill.title.substring(0, 100) + '...' : bill.title,
-          status: bill.latestAction || 'Introduced',
-          date: bill.introduced || '',
-          type: bill.chamber || 'state-bill',
-          level: 'state' as const,
-          jurisdiction: bill.jurisdiction,
-          session: bill.session,
-        }));
+      // Map state bills to BillSuggestion format
+      const stateBills: BillSuggestion[] = (stateBillsData.bills || []).map((bill: any) => ({
+        number: bill.bill,
+        title: bill.title,
+        titleShort: bill.title.length > 100 ? bill.title.substring(0, 100) + '...' : bill.title,
+        status: bill.latestAction || 'Introduced',
+        date: bill.introduced || '',
+        type: bill.chamber || 'state-bill',
+        level: 'state' as const,
+        jurisdiction: bill.jurisdiction,
+        session: bill.session,
+      }));
 
-        // Mark federal bills
-        const federalBillsWithLevel = federalBills.map(bill => ({
-          ...bill,
-          level: 'federal' as const,
-        }));
+      // Mark federal bills
+      const federalBillsWithLevel = federalBills.map(bill => ({
+        ...bill,
+        level: 'federal' as const,
+      }));
 
-        // Merge: state bills first (more relevant to user's location), then federal
-        const merged = [...stateBills, ...federalBillsWithLevel];
-        setBillSuggestions(merged);
-      } catch (error) {
-        console.error('Bill search error:', error);
-      }
-    }, 300);
+      // Merge: state bills first (more relevant to user's location), then federal
+      const merged = [...stateBills, ...federalBillsWithLevel];
+      setBillSuggestions(merged);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Bill search error:', error);
+    } finally {
+      setSearchingBills(false);
+    }
+  };
 
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, [billQuery, userState]);
+  // Handle bill search submission
+  const handleBillSearch = () => {
+    setBillQuery(billSearchInput);
+    searchBills(billSearchInput);
+  };
+
+  // Handle Enter key in bill search
+  const handleBillSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBillSearch();
+    }
+  };
 
   const showCustomTopicField = selectedTopicValue === "OTHER";
 
@@ -457,23 +466,41 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
           <label htmlFor="bill-number" className="block font-semibold text-gray-700 mb-1 text-sm">
             Bill Number <span className="text-gray-500 font-normal">(optional)</span>
           </label>
-          <input
-            id="bill-number"
-            type="text"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="e.g., HR 1234, CA AB 123, or search by title"
-            value={billQuery}
-            onChange={(e) => {
-              setBillQuery(e.target.value);
-              update("bill", e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => {
-              // Delay to allow clicking suggestions
-              setTimeout(() => setShowSuggestions(false), 200);
-            }}
-          />
+          <div className="flex gap-2">
+            <input
+              id="bill-number"
+              type="text"
+              className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="e.g., HR 1234, CA AB 123"
+              value={billSearchInput}
+              onChange={(e) => {
+                setBillSearchInput(e.target.value);
+              }}
+              onKeyDown={handleBillSearchKeyDown}
+              onFocus={() => {
+                if (billSuggestions.length > 0) setShowSuggestions(true);
+              }}
+              onBlur={() => {
+                // Delay to allow clicking suggestions
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleBillSearch}
+              disabled={searchingBills}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {searchingBills ? (
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                'Search'
+              )}
+            </button>
+          </div>
 
           {/* Bill Suggestions Dropdown */}
           {showSuggestions && billSuggestions.length > 0 && (
@@ -485,6 +512,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
                   className="w-full px-3 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
                   onClick={async () => {
                     setBillQuery(bill.number);
+                    setBillSearchInput(bill.number);
                     update("bill", bill.number);
                     update("billTitle", bill.title);
                     setShowSuggestions(false);
