@@ -37,36 +37,60 @@ export async function GET(req: NextRequest) {
   try {
     // Use production domain directly to avoid preview deployment auth issues
     const productionUrl = process.env.NEXT_PUBLIC_APP_URL || "https://takecivicaction.org";
-    const warmupUrl = `${productionUrl}/api/bills/search-state?q=budget&jurisdiction=California`;
 
-    console.log(`[Warmup] Calling production: ${warmupUrl}`);
+    // Warm up the 4 most populous states to cover ~40% of US population
+    // CA: 39M, TX: 30M, FL: 22M, NY: 19M (total: 110M / 330M = 33%)
+    const statesToWarmup = ["California", "Texas", "Florida", "New York"];
 
-    const response = await fetch(warmupUrl, {
-      headers: {
-        "User-Agent": "Vercel-Cron-Warmup",
-      },
-    });
+    console.log(`[Warmup] Starting warmup for ${statesToWarmup.length} states`);
 
-    console.log(`[Warmup] Response status: ${response.status}`);
+    const results = await Promise.allSettled(
+      statesToWarmup.map(async (state) => {
+        const warmupUrl = `${productionUrl}/api/bills/search-state?q=budget&jurisdiction=${encodeURIComponent(state)}`;
 
-    // Try to parse JSON, but handle non-JSON responses gracefully
-    let data: any = null;
-    const contentType = response.headers.get("content-type");
+        const response = await fetch(warmupUrl, {
+          headers: {
+            "User-Agent": "Vercel-Cron-Warmup",
+          },
+        });
 
-    if (contentType?.includes("application/json")) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      console.log(`[Warmup] Non-JSON response: ${text.substring(0, 200)}`);
-    }
+        console.log(`[Warmup] ${state}: ${response.status}`);
+
+        // Try to parse JSON, but handle non-JSON responses gracefully
+        let billsFound = 0;
+        const contentType = response.headers.get("content-type");
+
+        if (contentType?.includes("application/json")) {
+          const data = await response.json();
+          billsFound = data?.bills?.length || 0;
+        }
+
+        return {
+          state,
+          status: response.status,
+          success: response.ok,
+          billsFound,
+        };
+      })
+    );
+
+    // Count successes
+    const successful = results.filter(r => r.status === "fulfilled" && r.value.success).length;
+    const failed = results.length - successful;
+
+    console.log(`[Warmup] Complete: ${successful}/${results.length} successful`);
 
     return NextResponse.json({
-      success: response.ok,
+      success: successful > 0,
       timestamp: new Date().toISOString(),
-      warmupUrl,
-      status: response.status,
-      billsFound: data?.bills?.length || 0,
-      contentType,
+      states: statesToWarmup,
+      successful,
+      failed,
+      results: results.map(r =>
+        r.status === "fulfilled"
+          ? r.value
+          : { error: r.reason?.message || "Unknown error" }
+      ),
     });
   } catch (error) {
     console.error("[Warmup] Cron job failed:", error);
