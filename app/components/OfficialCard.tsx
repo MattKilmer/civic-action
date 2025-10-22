@@ -23,7 +23,11 @@ type Props = {
 export default function OfficialCard({ official, draft, onDraft, hasIssue = false, canVote = false, billNumber }: Props) {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showWebFormGuide, setShowWebFormGuide] = useState(false);
+  const [showCopyToast, setShowCopyToast] = useState(false);
+
   const email = official.emails?.[0];
+  const hasEmail = !!(email && email.trim().length > 0);
   const subject = `Constituent regarding ${official.role}`;
   const mailto = email && draft ? mailtoHref(email, subject, draft) : undefined;
   const canDraft = hasIssue && !draft;
@@ -52,6 +56,47 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
       }
       document.body.removeChild(textArea);
     }
+  };
+
+  const handleWebFormContact = async () => {
+    if (!draft) return;
+
+    // Auto-copy the draft to clipboard
+    try {
+      await navigator.clipboard.writeText(draft);
+      setShowCopyToast(true);
+      setTimeout(() => setShowCopyToast(false), 3000);
+    } catch (err) {
+      // Fallback copy method
+      const textArea = document.createElement('textarea');
+      textArea.value = draft;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setShowCopyToast(true);
+        setTimeout(() => setShowCopyToast(false), 3000);
+      } catch (e) {
+        console.error('Failed to copy text:', e);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    // Open the contact form in a new tab
+    const contactUrl = official.primaryUrl || official.urls?.[0];
+    if (contactUrl) {
+      // Try common contact page patterns
+      const contactPaths = ['/contact', '/contact-me', '/email-me', '/write-your-representative'];
+      const baseUrl = contactUrl.endsWith('/') ? contactUrl.slice(0, -1) : contactUrl;
+
+      // Open the base URL with /contact appended
+      window.open(baseUrl + '/contact', '_blank', 'noopener,noreferrer');
+    }
+
+    // Show the instruction guide
+    setShowWebFormGuide(true);
   };
 
   // Generate initials for photo fallback
@@ -95,6 +140,17 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                 </svg>
                 Can vote
+              </span>
+            )}
+            {!hasEmail && draft && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium"
+                aria-label="Contact via web form required"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Uses web form
               </span>
             )}
           </div>
@@ -157,13 +213,24 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
             </div>
           )}
         </div>
-        {mailto && (
+        {hasEmail && mailto && (
           <a
             className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
             href={mailto}
           >
             Send email to {official.name.split(" ")[0]}
           </a>
+        )}
+        {!hasEmail && draft && (
+          <button
+            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm inline-flex items-center gap-2"
+            onClick={handleWebFormContact}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Contact via web form
+          </button>
         )}
       </div>
 
@@ -216,6 +283,65 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
               Click the textarea to select all text, or use the &quot;Copy text&quot; button to copy to your clipboard. You can edit the text before sending.
             </span>
           </p>
+        </div>
+      )}
+
+      {/* Web Form Contact Instructions */}
+      {showWebFormGuide && !hasEmail && draft && (
+        <div className="border-t border-gray-200 pt-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+              </svg>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                  How to Contact via Web Form
+                </h4>
+                <p className="text-sm text-blue-800 mb-3">
+                  Your message has been copied to your clipboard. Follow these steps to complete your contact:
+                </p>
+                <ol className="text-sm text-blue-900 space-y-2 list-decimal list-inside">
+                  <li>A new tab has opened with {official.name.split(" ")[0]}&apos;s contact page</li>
+                  <li>Look for the contact form or email option on their website</li>
+                  <li>Fill in your personal information (name, email, address)</li>
+                  <li>Paste your message into the message field (your draft is already copied!)</li>
+                  <li>Review your message and submit the form</li>
+                </ol>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="text-xs text-blue-800 flex items-start gap-1.5">
+                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                    </svg>
+                    <span>
+                      If the new tab didn&apos;t open or you closed it, you can visit {official.name.split(" ")[0]}&apos;s website using the link above and navigate to their contact page.
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWebFormGuide(false)}
+                className="text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded p-1"
+                aria-label="Dismiss instructions"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Toast Notification */}
+      {showCopyToast && (
+        <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
+          <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            </svg>
+            <span className="font-medium">Message copied to clipboard!</span>
+          </div>
         </div>
       )}
     </div>

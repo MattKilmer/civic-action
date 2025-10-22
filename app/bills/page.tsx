@@ -244,9 +244,12 @@ export default function BillExplorerPage() {
 
           if (!res.ok) {
             if (res.status === 429) {
-              throw new Error('Rate limit exceeded. Please try again in a few moments.');
+              throw new Error('Too many searches. Please wait a moment and try again.');
             }
-            throw new Error('Failed to fetch state bills');
+            if (res.status === 502 || res.status === 503) {
+              throw new Error('State bill service temporarily unavailable. Please try again in a moment.');
+            }
+            throw new Error('Failed to fetch state bills. Please try again.');
           }
 
           const data = await res.json();
@@ -275,7 +278,8 @@ export default function BillExplorerPage() {
         }
       } catch (err) {
         console.error('Error fetching bills:', err);
-        setError('Failed to load bills. Please try again.');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load bills. Please try again.';
+        setError(errorMessage);
         setBills([]);
       } finally {
         setLoading(false);

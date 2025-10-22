@@ -7,12 +7,68 @@
 const API_BASE = "https://v3.openstates.org";
 const API_KEY = process.env.OPENSTATES_API_KEY;
 
-// Rate limiting: Free tier = 500 req/day, 10 req/min
+// Rate limiting: Free tier = 500 req/day
+// Setting to 100 req/min to allow for reasonable usage while staying well under daily limit
+// (100/min * 60min * 24hr = 144,000/day theoretical max, but real usage much lower)
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_MAX = 100;
 
 // In-memory rate limiter (same pattern as our existing rate limiter)
 const requestTimestamps: number[] = [];
+
+// Simple in-memory cache for search results (5 minute TTL)
+interface CacheEntry {
+  data: { bills: NormalizedStateBill[] };
+  timestamp: number;
+}
+const searchCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(params: {
+  query: string;
+  jurisdiction?: string;
+  session?: string;
+  page?: number;
+  perPage?: number;
+}): string {
+  return JSON.stringify({
+    q: params.query.toLowerCase().trim(),
+    j: params.jurisdiction || '',
+    s: params.session || '',
+    p: params.page || 1,
+    pp: params.perPage || 20,
+  });
+}
+
+function getFromCache(key: string): { bills: NormalizedStateBill[] } | null {
+  const entry = searchCache.get(key);
+  if (!entry) return null;
+
+  const now = Date.now();
+  if (now - entry.timestamp > CACHE_TTL) {
+    searchCache.delete(key);
+    return null;
+  }
+
+  return entry.data;
+}
+
+function setInCache(key: string, data: { bills: NormalizedStateBill[] }): void {
+  searchCache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
+
+  // Clean up old entries (keep cache size reasonable)
+  if (searchCache.size > 100) {
+    const now = Date.now();
+    for (const [k, v] of searchCache.entries()) {
+      if (now - v.timestamp > CACHE_TTL) {
+        searchCache.delete(k);
+      }
+    }
+  }
+}
 
 function checkRateLimit(): boolean {
   const now = Date.now();
@@ -113,6 +169,14 @@ export async function searchStateBills(params: {
     return { bills: [], error: "State bill search unavailable (API key not configured)" };
   }
 
+  // Check cache first
+  const cacheKey = getCacheKey(params);
+  const cached = getFromCache(cacheKey);
+  if (cached) {
+    console.log(`[openstates] Cache hit for: ${params.query}`);
+    return cached;
+  }
+
   // Check rate limit
   if (!checkRateLimit()) {
     return { bills: [], error: "Rate limit exceeded. Please try again in a moment." };
@@ -174,7 +238,11 @@ export async function searchStateBills(params: {
         .map(mapOpenStatesBillToNormalized)
         .filter((bill): bill is NormalizedStateBill => bill !== null);
 
-      return { bills };
+      // Cache the result
+      const result = { bills };
+      setInCache(cacheKey, result);
+
+      return result;
     } catch (fetchError) {
       clearTimeout(timeoutId);
       throw fetchError;
