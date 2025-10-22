@@ -22,10 +22,37 @@ type Props = {
 
 export default function OfficialCard({ official, draft, onDraft, hasIssue = false, canVote = false, billNumber }: Props) {
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const email = official.emails?.[0];
   const subject = `Constituent regarding ${official.role}`;
   const mailto = email && draft ? mailtoHref(email, subject, draft) : undefined;
   const canDraft = hasIssue && !draft;
+
+  const copyToClipboard = async () => {
+    if (!draft) return;
+
+    try {
+      await navigator.clipboard.writeText(draft);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = draft;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        console.error('Failed to copy text:', e);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
 
   // Generate initials for photo fallback
   const initials = official.name
@@ -142,20 +169,52 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
 
       {/* Draft Display */}
       {draft && (
-        <div className="border-t border-gray-200 pt-4 space-y-2">
-          <label htmlFor={`draft-${official.name}`} className="block text-sm font-semibold text-gray-700">
-            Your AI-drafted email:
-          </label>
+        <div className="border-t border-gray-200 pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <label htmlFor={`draft-${official.name}`} className="block text-sm font-semibold text-gray-700">
+              Your AI-drafted email:
+            </label>
+            <button
+              onClick={copyToClipboard}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                copied
+                  ? 'bg-green-50 text-green-700 border border-green-200 focus:ring-green-500'
+                  : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 focus:ring-blue-500'
+              }`}
+              aria-label={copied ? 'Email text copied to clipboard' : 'Copy email text to clipboard'}
+            >
+              {copied ? (
+                <>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy text
+                </>
+              )}
+            </button>
+          </div>
           <textarea
             id={`draft-${official.name}`}
-            className="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
+            className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y leading-relaxed"
             value={draft}
             readOnly
             rows={10}
             onFocus={(e) => e.currentTarget.select()}
           />
-          <p className="text-sm text-gray-600">
-            Click to select all, then copy and paste into your email client or the official&apos;s contact form.
+          <p className="text-xs text-gray-600 flex items-start gap-1.5">
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <span>
+              Click the textarea to select all text, or use the &quot;Copy text&quot; button to copy to your clipboard. You can edit the text before sending.
+            </span>
           </p>
         </div>
       )}
