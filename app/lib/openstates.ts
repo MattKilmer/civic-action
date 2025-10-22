@@ -203,13 +203,13 @@ export async function searchStateBills(params: {
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
     // Retry logic for cold starts
-    // First attempt: 12 seconds
-    // Retry attempt: 10 seconds
-    // Total max time: ~22 seconds (well under Vercel's 25s Edge Runtime limit)
+    // First attempt: 15 seconds (Open States can be very slow on cold start)
+    // Retry attempt: 8 seconds (if first fails, second is usually faster)
+    // Total max time: ~23 seconds (well under Vercel's 25s Edge Runtime limit)
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < 2; attempt++) {
-      const timeout = attempt === 0 ? 12000 : 10000; // 12s first try, 10s retry
+      const timeout = attempt === 0 ? 15000 : 8000; // 15s first try, 8s retry
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 

@@ -4,12 +4,12 @@ export const runtime = "edge";
 
 /**
  * Warmup cron job to prevent cold starts on state bill search
- * Runs every 5 minutes to keep the Edge function warm
+ * Runs every 3 minutes to keep the Edge function warm
  *
  * To enable:
  * 1. Deploy to Vercel
  * 2. Go to Project Settings → Cron Jobs
- * 3. Add cron: /api/cron/warmup with schedule (every 5 minutes)
+ * 3. Add cron: /api/cron/warmup with schedule (every 3 minutes)
  * 4. Or use vercel.json configuration (see vercel.json)
  */
 export async function GET(req: NextRequest) {

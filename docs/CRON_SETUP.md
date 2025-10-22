@@ -5,7 +5,7 @@ This project uses a Vercel Cron job to keep the state bill search API warm and p
 ## How It Works
 
 - **Endpoint**: `/api/cron/warmup`
-- **Schedule**: Every 5 minutes (`*/5 * * * *`)
+- **Schedule**: Every 3 minutes (`*/3 * * * *`)
 - **Purpose**: Makes a lightweight request to the state bill search API to keep it warm
 - **Prevents**: Cold start timeouts that cause "operation was aborted" errors
 
@@ -44,7 +44,7 @@ git push origin main
 1. Go to **Deployments** → Select your latest deployment
 2. Click **Logs** tab
 3. Filter by `/api/cron/warmup` to see cron executions
-4. You should see logs every 5 minutes
+4. You should see logs every 3 minutes
 
 **Option B: Manual Test (local)**
 ```bash
@@ -83,14 +83,14 @@ curl -H "Authorization: Bearer YOUR_SECRET_HERE" http://localhost:3000/api/cron/
 - Ensure `vercel.json` has the `crons` configuration
 
 **Still seeing cold start errors:**
-- The cron runs every 5 minutes, so there may be a brief window after idle periods
-- The retry logic in `app/lib/openstates.ts` should handle these cases
-- Consider reducing cron interval to `*/3 * * * *` (every 3 minutes) if needed
+- The cron runs every 3 minutes, so there should be minimal cold start windows
+- The retry logic in `app/lib/openstates.ts` (15s + 8s) should handle most cases
+- If still seeing errors, Open States API may be experiencing issues
 
 ## Cost Considerations
 
 - Vercel Hobby plan: 100 cron executions/day (free)
-- This setup uses ~288 executions/day (every 5 minutes)
+- This setup uses ~480 executions/day (every 3 minutes)
 - **Requires Pro plan** ($20/month) for unlimited cron jobs
 - Alternative: Use external service like cron-job.org (free) to ping the warmup endpoint
 
@@ -101,7 +101,7 @@ If you don't want to pay for Vercel Pro, you can use a free external cron servic
 1. Sign up at [cron-job.org](https://cron-job.org) (free)
 2. Create a new cron job:
    - URL: `https://your-domain.vercel.app/api/cron/warmup`
-   - Schedule: Every 5 minutes
+   - Schedule: Every 3 minutes
    - HTTP Header: `Authorization: Bearer YOUR_CRON_SECRET`
 3. This achieves the same result without using Vercel's cron feature
 
