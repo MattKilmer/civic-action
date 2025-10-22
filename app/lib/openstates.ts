@@ -202,61 +202,77 @@ export async function searchStateBills(params: {
 
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
-    // Create AbortController for timeout
-    // Use 10 seconds to stay well under Vercel's 25s Edge Runtime limit
-    // This gives us time to return a proper error response
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    // Retry logic for cold starts
+    // First attempt: 12 seconds
+    // Retry attempt: 10 seconds
+    // Total max time: ~22 seconds (well under Vercel's 25s Edge Runtime limit)
+    let lastError: Error | null = null;
 
-    try {
-      const response = await fetch(url, {
-        headers: {
-          "X-API-KEY": API_KEY,
-        },
-        signal: controller.signal,
-      });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const timeout = attempt === 0 ? 12000 : 10000; // 12s first try, 10s retry
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Open States API error:", {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-          url,
-          apiKeyConfigured: !!API_KEY
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "X-API-KEY": API_KEY,
+          },
+          signal: controller.signal,
         });
-        return {
-          bills: [],
-          error: `State bill search failed (${response.status}: ${response.statusText})`
-        };
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Open States API error:", {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+            url,
+            apiKeyConfigured: !!API_KEY
+          });
+          return {
+            bills: [],
+            error: `State bill search failed (${response.status}: ${response.statusText})`
+          };
+        }
+
+        const data: OpenStatesSearchResponse = await response.json();
+
+        // Normalize to our format and filter out null results (bills with incomplete data)
+        const bills: NormalizedStateBill[] = data.results
+          .map(mapOpenStatesBillToNormalized)
+          .filter((bill): bill is NormalizedStateBill => bill !== null);
+
+        // Cache the result
+        const result = { bills };
+        setInCache(cacheKey, result);
+
+        return result;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+
+        // If it's an AbortError (timeout), save it and retry
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          lastError = fetchError;
+          console.log(`[OpenStates] Attempt ${attempt + 1} timed out, ${attempt === 0 ? 'retrying...' : 'giving up'}`);
+          continue; // Try again
+        }
+
+        // For other errors, throw immediately
+        throw fetchError;
       }
-
-      const data: OpenStatesSearchResponse = await response.json();
-
-      // Normalize to our format and filter out null results (bills with incomplete data)
-      const bills: NormalizedStateBill[] = data.results
-        .map(mapOpenStatesBillToNormalized)
-        .filter((bill): bill is NormalizedStateBill => bill !== null);
-
-      // Cache the result
-      const result = { bills };
-      setInCache(cacheKey, result);
-
-      return result;
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw fetchError;
     }
+
+    // If we've exhausted retries, return timeout error
+    console.error("Open States API request failed after retries:", lastError);
+    return {
+      bills: [],
+      error: "Search timed out. The state bills database is loading - please try again in a moment or use a more specific search term."
+    };
   } catch (error) {
     console.error("Open States API request failed:", error);
-
-    // Check if error is due to abort/timeout
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { bills: [], error: "Search timed out. The state bills database is loading - please try again in a moment or use a more specific search term." };
-    }
-
     return { bills: [], error: "State bill search failed" };
   }
 }
