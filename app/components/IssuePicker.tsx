@@ -197,12 +197,13 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
       isAutoDetectingRef.current = false; // Done auto-detecting
 
-      // Fetch bill summary if we have congress and type info (federal bills) and no summary provided
-      if (initialBillCongress && initialBillType && !initialBillSummary) {
+      // Fetch bill summary only for federal bills (not state bills)
+      // Only fetch if we have valid congress/type and it's actually a federal bill (not state)
+      if (isFederalBill && !initialBillSummary) {
         setLoadingSummary(true);
         fetchBillDetails(
-          parseInt(initialBillCongress),
-          initialBillType,
+          parseInt(initialBillCongress!),
+          initialBillType!,
           initialBillNumber
         ).then((summary) => {
           if (summary) {
