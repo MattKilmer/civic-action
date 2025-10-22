@@ -20,13 +20,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Make a lightweight warmup request to state bill search
-    // Use California and a simple query
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+    // Get the base URL from the request
+    const url = new URL(req.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
 
     const warmupUrl = `${baseUrl}/api/bills/search-state?q=budget&jurisdiction=California`;
+
+    console.log(`[Warmup] Calling: ${warmupUrl}`);
 
     const response = await fetch(warmupUrl, {
       headers: {
@@ -34,14 +34,26 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    console.log(`[Warmup] Response status: ${response.status}`);
+
+    // Try to parse JSON, but handle non-JSON responses gracefully
+    let data: any = null;
+    const contentType = response.headers.get("content-type");
+
+    if (contentType?.includes("application/json")) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      console.log(`[Warmup] Non-JSON response: ${text.substring(0, 200)}`);
+    }
 
     return NextResponse.json({
-      success: true,
+      success: response.ok,
       timestamp: new Date().toISOString(),
       warmupUrl,
       status: response.status,
-      billsFound: data.bills?.length || 0,
+      billsFound: data?.bills?.length || 0,
+      contentType,
     });
   } catch (error) {
     console.error("[Warmup] Cron job failed:", error);
