@@ -15,14 +15,18 @@ type Props = {
   };
   draft?: string;
   onDraft: () => Promise<void>;
+  phoneScript?: string;
+  onPhoneScript: () => Promise<void>;
   hasIssue?: boolean;
   canVote?: boolean;
   billNumber?: string;
 };
 
-export default function OfficialCard({ official, draft, onDraft, hasIssue = false, canVote = false, billNumber }: Props) {
+export default function OfficialCard({ official, draft, onDraft, phoneScript, onPhoneScript, hasIssue = false, canVote = false, billNumber }: Props) {
   const [busy, setBusy] = useState(false);
+  const [busyPhone, setBusyPhone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
   const [showWebFormGuide, setShowWebFormGuide] = useState(false);
   const [showCopyToast, setShowCopyToast] = useState(false);
 
@@ -51,6 +55,32 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
         document.execCommand('copy');
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        console.error('Failed to copy text:', e);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const copyPhoneScript = async () => {
+    if (!phoneScript) return;
+
+    try {
+      await navigator.clipboard.writeText(phoneScript);
+      setCopiedPhone(true);
+      setTimeout(() => setCopiedPhone(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = phoneScript;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedPhone(true);
+        setTimeout(() => setCopiedPhone(false), 2000);
       } catch (e) {
         console.error('Failed to copy text:', e);
       }
@@ -213,6 +243,32 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
             </div>
           )}
         </div>
+        {official.phones?.[0] && (
+          <div className="relative group">
+            <button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 text-sm"
+              onClick={async () => {
+                if (!hasIssue) return;
+                setBusyPhone(true);
+                try {
+                  await onPhoneScript();
+                } finally {
+                  setBusyPhone(false);
+                }
+              }}
+              disabled={busyPhone || !!phoneScript || !hasIssue}
+              title={!hasIssue ? "Select an issue above to get a call script" : undefined}
+            >
+              {busyPhone ? "Generating…" : phoneScript ? "✓ Script generated" : "Get call script"}
+            </button>
+            {!hasIssue && !phoneScript && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                ⬆ Select an issue above first
+                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            )}
+          </div>
+        )}
         {hasEmail && mailto && (
           <a
             className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
@@ -341,6 +397,80 @@ export default function OfficialCard({ official, draft, onDraft, hasIssue = fals
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
             </svg>
             <span className="font-medium">Message copied to clipboard!</span>
+          </div>
+        </div>
+      )}
+
+      {/* Phone Script Display */}
+      {phoneScript && (
+        <div className="border-t border-gray-200 pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <label htmlFor={`script-${official.name}`} className="block text-sm font-semibold text-gray-700">
+              Your call script:
+            </label>
+            <button
+              onClick={copyPhoneScript}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                copiedPhone
+                  ? 'bg-green-50 text-green-700 border border-green-200 focus:ring-green-500'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 focus:ring-emerald-500'
+              }`}
+              aria-label={copiedPhone ? 'Script copied to clipboard' : 'Copy script to clipboard'}
+            >
+              {copiedPhone ? (
+                <>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy script
+                </>
+              )}
+            </button>
+          </div>
+          <textarea
+            id={`script-${official.name}`}
+            className="w-full border border-emerald-300 rounded-lg p-3 text-sm text-gray-900 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-y leading-relaxed"
+            value={phoneScript}
+            readOnly
+            rows={6}
+            onFocus={(e) => e.currentTarget.select()}
+          />
+
+          {/* Call Guidance */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-2">
+            <h4 className="text-sm font-semibold text-emerald-900 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+              </svg>
+              Tips for calling
+            </h4>
+            <ul className="text-sm text-emerald-900 space-y-1.5 list-disc list-inside">
+              <li><strong>Best times:</strong> 9am-5pm EST, Tuesday-Thursday</li>
+              <li><strong>Keep it brief:</strong> Read your script (30-45 seconds) and thank them</li>
+              <li><strong>Be polite:</strong> Office staff are doing their job - respect goes a long way</li>
+              <li><strong>If voicemail:</strong> Leave the message - they count voicemails too</li>
+              <li><strong>Ask for response:</strong> Request a written response to your concern</li>
+            </ul>
+            {official.phones?.[0] && (
+              <div className="pt-2 border-t border-emerald-200">
+                <a
+                  href={`tel:${official.phones[0]}`}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-900 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                  </svg>
+                  Call now: {official.phones[0]}
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

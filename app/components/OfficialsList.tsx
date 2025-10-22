@@ -26,6 +26,7 @@ export default function OfficialsList({ officials, issue, location }: {
   location?: { city?: string; state?: string };
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [phoneScripts, setPhoneScripts] = useState<Record<string, string>>({});
   const [infoBannerDismissed, setInfoBannerDismissed] = useState(false);
 
   async function draftFor(official: Official) {
@@ -46,6 +47,26 @@ export default function OfficialsList({ officials, issue, location }: {
     }
 
     if (json.text) setDrafts((d) => ({ ...d, [official.name + official.role]: json.text }));
+  }
+
+  async function phoneScriptFor(official: Official) {
+    if (!issue) return; // Safety check
+    const input = { ...issue, ...location };
+
+    console.log("[DEBUG] Sending phone script request with input:", input);
+
+    const r = await fetch("/api/ai/phone-script", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ issue: input, official }),
+    });
+    const json = await r.json();
+
+    if (!r.ok) {
+      console.error("[ERROR] Phone script API failed:", r.status, json);
+    }
+
+    if (json.script) setPhoneScripts((s) => ({ ...s, [official.name + official.role]: json.script }));
   }
 
   // Determine bill info and enrich officials with voting info
@@ -106,6 +127,8 @@ export default function OfficialsList({ officials, issue, location }: {
                 official={o}
                 draft={drafts[o.name + o.role]}
                 onDraft={() => draftFor(o)}
+                phoneScript={phoneScripts[o.name + o.role]}
+                onPhoneScript={() => phoneScriptFor(o)}
                 hasIssue={!!issue}
                 canVote={o.canVote}
                 billNumber={issue?.bill}
@@ -131,6 +154,8 @@ export default function OfficialsList({ officials, issue, location }: {
                 official={o}
                 draft={drafts[o.name + o.role]}
                 onDraft={() => draftFor(o)}
+                phoneScript={phoneScripts[o.name + o.role]}
+                onPhoneScript={() => phoneScriptFor(o)}
                 hasIssue={!!issue}
                 canVote={o.canVote}
                 billNumber={issue?.bill}
