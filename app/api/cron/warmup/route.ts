@@ -19,14 +19,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Only run warmup on production deployments
+  // Skip on preview/development to avoid hitting deployment protection
+  const isProduction = process.env.VERCEL_ENV === "production";
+
+  if (!isProduction) {
+    console.log(`[Warmup] Skipping - not production (env: ${process.env.VERCEL_ENV})`);
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      reason: "Not production environment",
+      env: process.env.VERCEL_ENV,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   try {
-    // Get the base URL from the request
-    const url = new URL(req.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
+    // Use production domain directly to avoid preview deployment auth issues
+    const productionUrl = process.env.NEXT_PUBLIC_APP_URL || "https://takecivicaction.org";
+    const warmupUrl = `${productionUrl}/api/bills/search-state?q=budget&jurisdiction=California`;
 
-    const warmupUrl = `${baseUrl}/api/bills/search-state?q=budget&jurisdiction=California`;
-
-    console.log(`[Warmup] Calling: ${warmupUrl}`);
+    console.log(`[Warmup] Calling production: ${warmupUrl}`);
 
     const response = await fetch(warmupUrl, {
       headers: {
