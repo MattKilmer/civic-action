@@ -9,9 +9,8 @@ export const runtime = "edge";
  * To enable:
  * 1. Deploy to Vercel
  * 2. Go to Project Settings → Cron Jobs
- * 3. Add cron: /api/cron/warmup with schedule "*/5 * * * *" (every 5 minutes)
- *
- * Or use vercel.json configuration (see vercel.json)
+ * 3. Add cron: /api/cron/warmup with schedule (every 5 minutes)
+ * 4. Or use vercel.json configuration (see vercel.json)
  */
 export async function GET(req: NextRequest) {
   // Verify this is called by Vercel Cron (security)

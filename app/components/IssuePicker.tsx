@@ -267,6 +267,13 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
   // Fetch bill details including summary
   async function fetchBillDetails(congress: number, type: string, billNumber: string) {
+    // Guard: Only fetch for valid federal bills
+    // State bills have type="state-house" or "state-senate" and should not use this endpoint
+    if (!congress || isNaN(congress) || type.startsWith('state-')) {
+      console.log(`[IssuePicker] Skipping bill summary fetch - not a federal bill (congress=${congress}, type=${type})`);
+      return null;
+    }
+
     try {
       // Extract just the numeric part from bill number (e.g., "HR 1234" -> "1234")
       const numericPart = billNumber.replace(/[A-Z\s]/gi, '').trim();
