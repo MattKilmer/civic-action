@@ -10,12 +10,13 @@ A web app that makes it simple for citizens to contact their representatives wit
 
 ### Core Functionality
 - **Officials Lookup**: Find elected officials (state → federal) for any U.S. address using the 5 Calls API
+  - **Smart Address Input**: Guides users to enter full street addresses for accurate state legislator matches (zip codes alone can be less accurate)
 - **Comprehensive Coverage**: Includes federal (House, Senate) and state (Governor, AG, Sec of State, legislators)
 - **Bill Explorer**: Browse and search **both federal and state legislation**
   - **Federal Bills**: Congress.gov API with status filtering (active, enacted, passed house/senate, introduced)
-  - **State Bills**: Open States API covering all 50 states with search, pagination, and bill status
+  - **State Bills**: LegiScan API covering all 50 states with search, pagination, and on-demand summaries
   - Load More pagination for extensive results
-  - Direct links to official bill text on Congress.gov and OpenStates.org
+  - Direct links to official bill text on Congress.gov and LegiScan.com
 - **Smart Voting Badges**: Automatically identifies which officials can directly vote on selected bills
   - Federal bills → highlights House Reps and Senators
   - State bills → highlights state legislators from the relevant state
@@ -63,7 +64,7 @@ A web app that makes it simple for citizens to contact their representatives wit
 - **APIs**:
   - 5 Calls API (officials lookup, no auth required)
   - Congress.gov API (federal bills, free API key, 5,000 req/hr)
-  - Open States API v3 (state bills, free API key, 500 req/day)
+  - LegiScan API (state bills, free API key, 30,000 req/month)
   - OpenAI GPT-4o-mini (email drafting)
 - **Validation**: Zod
 - **SEO**: Built-in sitemap, robots.txt, JSON-LD structured data
@@ -76,7 +77,7 @@ A web app that makes it simple for citizens to contact their representatives wit
 - Node.js 18+ and npm
 - OpenAI API key (required for email drafting)
 - Congress.gov API key (optional for federal bill search)
-- Open States API key (optional for state bill search)
+- LegiScan API key (optional for state bill search)
 
 ### 1. Clone and Install
 
@@ -106,10 +107,10 @@ Then add your API keys to `.env.local`:
 2. Sign up for a free API key (5,000 requests/hour)
 3. Copy the key to `CONGRESS_API_KEY`
 
-**Open States API (Optional - for state bill search):**
-1. Go to [Open States API](https://openstates.org/api/register/)
-2. Register for a free API key (500 requests/day)
-3. Copy the key to `OPENSTATES_API_KEY`
+**LegiScan API (Optional - for state bill search):**
+1. Go to [LegiScan API](https://legiscan.com/legiscan-register)
+2. Register for a free API key (30,000 requests/month)
+3. Copy the key to `LEGISCAN_API_KEY`
 
 **Note:** The app will work without the bill search API keys, but you won't be able to browse federal or state legislation.
 
@@ -162,7 +163,7 @@ Then:
     OfficialsList.tsx       # Officials grid with draft management
   /lib
     civic.ts                # 5 Calls API response mapper
-    openstates.ts           # Open States API client with caching
+    legiscan.ts             # LegiScan API client with caching
     billVoting.ts           # Bill voting logic (who can vote on what)
     mailto.ts               # mailto: URL builder
     rateLimit.ts            # In-memory rate limiter
@@ -195,7 +196,7 @@ Then:
 3. Add environment variables in Vercel dashboard:
    - `OPENAI_API_KEY` (required)
    - `CONGRESS_API_KEY` (optional, for federal bills)
-   - `OPENSTATES_API_KEY` (optional, for state bills)
+   - `LEGISCAN_API_KEY` (optional, for state bills)
 4. Deploy
 
 The app uses Edge Runtime for all API routes, making it fast and globally distributed.
@@ -218,11 +219,13 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
   - [x] Bill Explorer page with status filtering
   - [x] Load More pagination
   - [x] Direct links to Congress.gov
-- [x] **State Bills**: Open States API v3 integration
+- [x] **State Bills**: LegiScan API integration
   - [x] Search across all 50 states
   - [x] State-specific filtering
+  - [x] On-demand summary fetching
   - [x] Pagination and caching (5-min TTL)
-  - [x] Direct links to OpenStates.org
+  - [x] 60x better rate limits (30k/month vs 500/day)
+  - [x] Direct links to LegiScan.com
 - [x] **Smart Voting Logic**:
   - [x] "Can Vote" badges for eligible officials
   - [x] Officials separated by voting eligibility
@@ -237,6 +240,7 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
   - [x] Smart topic selection with auto-detection
   - [x] Seamless bill selection flow (explorer → homepage)
   - [x] Session persistence for address lookup
+  - [x] Smart address input (guides users to enter full street addresses for accurate results)
 - [x] About and Privacy pages
 - [x] SEO optimization (sitemap, robots.txt, structured data)
 - [x] Research-backed issue topics

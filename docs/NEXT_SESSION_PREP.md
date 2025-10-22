@@ -1,6 +1,6 @@
 # Next Session Preparation
 
-**Last Updated**: October 22, 2025 (Post-LegiScan Migration)
+**Last Updated**: October 22, 2025 (Post-Address Form Improvements)
 **Status**: Production deployment complete, ready for user feedback
 
 ## What's Currently Live in Production
@@ -9,6 +9,7 @@
 
 1. **Officials Lookup** (5 Calls API)
    - All levels: Federal (House, Senate) + State (Governor, AG, legislators)
+   - **Smart Address Input**: Guides users to enter full street addresses (zip codes alone may be less accurate)
    - Session persistence (address saved in localStorage)
    - Location status display
 
@@ -67,23 +68,42 @@
    - Open Graph images
    - About and Privacy pages
 
-## Recent Changes (This Session)
+## Recent Changes (Latest Sessions)
 
-### Features Added
+### Session: October 22, 2025 - Address Form Improvements
+**Features Added:**
+1. Smart address input guidance (encourages full street addresses)
+2. Updated placeholder text with specific example format
+3. Helper text explaining zip code accuracy limitations
+
+**Issue Fixed:**
+- 5 Calls API returns incorrect state legislators for zip codes
+- Zip codes trigger `lowAccuracy: true` and return wrong officials in urban areas
+- Full street addresses provide `lowAccuracy: false` with correct matches
+
+### Session: October 22, 2025 - LegiScan Migration
+**Features Added:**
+1. Migrated from OpenStates to LegiScan API
+2. On-demand bill summary fetching
+3. 60x better rate limits (30,000 req/month vs 500 req/day)
+
+**Bugs Fixed:**
+1. State bill summaries not showing in Bill Explorer (404 errors)
+2. Federal senators incorrectly showing "Can vote" on state bills
+3. Bill number formatting improvements (e.g., "A06101" → "A 6101")
+4. "Invalid Date" display for state bills
+
+### Session: Prior - Web Forms & Caching
+**Features Added:**
 1. Web form contact guide with auto-copy and step-by-step instructions
 2. State bill search caching (5-min TTL, 100 req/min)
 3. One-click copy-to-clipboard button for drafts
 4. Toast notifications for user feedback
 5. Officials separation by voting eligibility
 
-### Bugs Fixed
+**Bugs Fixed:**
 1. 502/429 errors on state bill search (rate limiting + caching)
 2. TypeScript Map iteration compatibility (Vercel build)
-
-### Performance Improvements
-1. 10x increase in rate limit (10 → 100 req/min)
-2. ~70-80% reduction in Open States API calls (caching)
-3. Instant results for repeat searches
 
 ## Current API Configuration
 
@@ -184,7 +204,7 @@ npm run dev
 http://localhost:3000
 
 # 5. Test key features:
-# - Enter address: "11225" or "San Francisco, CA"
+# - Enter address: "123 Main St, Brooklyn, NY" (full address for accurate results)
 # - Select an issue and stance
 # - Search for a bill in Bill Explorer
 # - Generate draft for official without email
@@ -196,7 +216,8 @@ http://localhost:3000
 ### Session Summaries
 1. `SESSION_SUMMARY.md` - Original development (officials lookup, AI drafting)
 2. `SESSION_SUMMARY_2025-10-19_PART2.md` - Bill explorer & topic selection
-3. `SESSION_SUMMARY_2025-10-22_WEB_FORMS_STATE_BILLS.md` - This session (web forms, state bills)
+3. `SESSION_SUMMARY_2025-10-22_WEB_FORMS_STATE_BILLS.md` - Web forms, state bills, caching
+4. `SESSION_SUMMARY_2025-10-22_LEGISCAN_MIGRATION.md` - LegiScan API migration & bug fixes
 
 ### Technical Docs
 - `IMPACT_ANALYSIS.md` - Research on civic action effectiveness
