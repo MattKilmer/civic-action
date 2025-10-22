@@ -22,7 +22,7 @@ export default function AddressForm({ onSubmit }: { onSubmit: (address: string) 
               id="address-input"
               type="text"
               className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter your address (e.g., San Francisco, CA)"
+              placeholder="Enter your full address (e.g., 123 Main St, Brooklyn, NY)"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
@@ -35,7 +35,7 @@ export default function AddressForm({ onSubmit }: { onSubmit: (address: string) 
             </button>
           </div>
           <p className="text-sm text-gray-600 mt-2">
-            Your address is never stored. We only use it to find your representatives.
+            Your address is never stored—we only use it to find your representatives. For best results, enter a full street address; zip codes alone may be less accurate.
           </p>
         </div>
       </form>

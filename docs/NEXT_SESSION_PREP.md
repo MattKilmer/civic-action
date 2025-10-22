@@ -1,6 +1,6 @@
 # Next Session Preparation
 
-**Last Updated**: October 22, 2025
+**Last Updated**: October 22, 2025 (Post-LegiScan Migration)
 **Status**: Production deployment complete, ready for user feedback
 
 ## What's Currently Live in Production
@@ -17,11 +17,13 @@
      - Search by number or keywords
      - Status filtering (active, enacted, passed, introduced)
      - Load More pagination (200 bills initial load)
-   - **State Bills**: Open States API v3
+   - **State Bills**: LegiScan API
      - All 50 states supported
      - State-specific filtering (defaults to user's state)
      - Search with 5-minute caching
-     - 100 req/min rate limit
+     - **30,000 req/month** rate limit (60x improvement from OpenStates)
+     - **On-demand summary fetching**: Click "View Summary" to see full bill details
+     - Improved bill number formatting (e.g., "NY A 6101")
    - Seamless integration: "Use this bill" → returns to homepage with pre-fill
 
 3. **Smart Voting Logic**
@@ -30,6 +32,8 @@
      - "Can Vote on This Bill"
      - "Can Advocate & Influence"
    - Automatic detection of federal vs state bills
+   - **Fixed**: Federal senators no longer incorrectly marked for state bills
+   - Proper jurisdiction matching for state bills (e.g., only CA legislators for CA bills)
 
 4. **AI Email Drafting** (OpenAI GPT-4o-mini)
    - Personalized, respectful drafts (150-220 words)
@@ -88,7 +92,7 @@
 
 ### Optional (but recommended)
 - `CONGRESS_API_KEY`: Federal bill search (5,000 req/hr free)
-- `OPENSTATES_API_KEY`: State bill search (500 req/day free)
+- `LEGISCAN_API_KEY`: State bill search (30,000 req/month free)
 
 ### Not Required
 - 5 Calls API: No authentication needed
