@@ -203,8 +203,10 @@ export async function searchStateBills(params: {
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
     // Create AbortController for timeout
+    // Use 10 seconds to stay well under Vercel's 25s Edge Runtime limit
+    // This gives us time to return a proper error response
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
       const response = await fetch(url, {
@@ -252,7 +254,7 @@ export async function searchStateBills(params: {
 
     // Check if error is due to abort/timeout
     if (error instanceof Error && error.name === 'AbortError') {
-      return { bills: [], error: "Request timeout - the Open States API is taking too long to respond. Try a more specific search." };
+      return { bills: [], error: "Search timed out. The state bills database is loading - please try again in a moment or use a more specific search term." };
     }
 
     return { bills: [], error: "State bill search failed" };
@@ -287,8 +289,9 @@ export async function getStateBill(params: {
     const url = `${API_BASE}/bills?${searchParams.toString()}`;
 
     // Create AbortController for timeout
+    // Use 10 seconds to stay well under Vercel's 25s Edge Runtime limit
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
       const response = await fetch(url, {
