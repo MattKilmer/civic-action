@@ -11,23 +11,47 @@ A web app that makes it simple for citizens to contact their representatives wit
 ### Core Functionality
 - **Officials Lookup**: Find elected officials (state → federal) for any U.S. address using the 5 Calls API
 - **Comprehensive Coverage**: Includes federal (House, Senate) and state (Governor, AG, Sec of State, legislators)
-- **Bill Explorer**: Dedicated page to browse and search federal legislation with status filtering (active, enacted, passed house/senate, introduced), Load More pagination, and direct links to official bill text on Congress.gov
+- **Bill Explorer**: Browse and search **both federal and state legislation**
+  - **Federal Bills**: Congress.gov API with status filtering (active, enacted, passed house/senate, introduced)
+  - **State Bills**: Open States API covering all 50 states with search, pagination, and bill status
+  - Load More pagination for extensive results
+  - Direct links to official bill text on Congress.gov and OpenStates.org
+- **Smart Voting Badges**: Automatically identifies which officials can directly vote on selected bills
+  - Federal bills → highlights House Reps and Senators
+  - State bills → highlights state legislators from the relevant state
+  - Officials separated into "Can Vote" and "Can Advocate & Influence" sections
 - **Research-Backed Issues**: Top 10 issues for young voters based on Harvard Youth Poll, Pew Research, and AP-NORC data
-- **Smart Topic Selection**: Dropdown menu with intelligent auto-detection—select a bill and the topic is automatically filled based on bill content. "Other" option reveals a custom field only when needed
-- **Bill Search & Autocomplete**: Search Congress.gov API for federal bills by number or title (e.g., "HR 1234" or "climate") with inline autocomplete or via dedicated Bill Explorer page
-- **Seamless Bill Integration**: Select a bill from the explorer and return to homepage with bill number and topic pre-filled automatically
+- **Smart Topic Selection**: Dropdown menu with intelligent auto-detection—select a bill and the topic is automatically filled based on bill content
+- **Bill Search & Integration**: Search federal or state bills by number or keywords, then seamlessly return to homepage with bill info pre-filled
 - **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
-- **Contact Paths**: Direct links to email, phone, and official websites
+- **Web Form Contact Guide**: For officials without public email addresses
+  - Auto-copy draft message to clipboard
+  - Opens official's contact page in new tab
+  - Step-by-step instructions for filling web forms
+  - Visual toast notification confirming copy
+- **Multiple Contact Methods**:
+  - Email (direct mailto: links when available)
+  - Web form guidance (with auto-copy)
+  - Phone numbers with call links
+  - Official website links
+  - One-click copy-to-clipboard for all drafts
 - **Privacy-First**: No address storage, no auto-sending—users maintain full control
 
 ### Pages & Information
 - **Homepage**: Address lookup, issue selection, officials list, and email drafting
-- **Bill Explorer** (`/bills`): Browse and search federal legislation with filters and status tracking
+- **Bill Explorer** (`/bills`): Browse and search both federal and state legislation
+  - Toggle between federal and state bills
+  - State selector (defaults to user's state from address lookup)
+  - Search by keywords or bill number
+  - Status filtering and Load More pagination
 - **About Page**: How it works, mission, research-backed impact data (CMF studies)
 - **Privacy Policy**: Comprehensive transparency on data practices (we never store addresses or positions)
 
 ### Technical Features
-- **Rate Limited**: Built-in protection (30 req/min for lookups, 15 req/min for AI)
+- **Rate Limited & Cached**: Built-in protection with intelligent caching
+  - Officials lookup: 30 req/min
+  - AI drafting: 15 req/min
+  - State bills: 100 req/min with 5-minute result caching
 - **SEO Optimized**: Sitemap, robots.txt, structured data (JSON-LD), optimized metadata
 - **Mobile-First**: Responsive design, accessible (WCAG AA compliant)
 - **Edge Runtime**: Fast, globally distributed via Vercel
@@ -38,7 +62,8 @@ A web app that makes it simple for citizens to contact their representatives wit
 - **Styling**: Tailwind CSS
 - **APIs**:
   - 5 Calls API (officials lookup, no auth required)
-  - Congress.gov API (bill autocomplete, free API key)
+  - Congress.gov API (federal bills, free API key, 5,000 req/hr)
+  - Open States API v3 (state bills, free API key, 500 req/day)
   - OpenAI GPT-4o-mini (email drafting)
 - **Validation**: Zod
 - **SEO**: Built-in sitemap, robots.txt, JSON-LD structured data
@@ -50,7 +75,8 @@ A web app that makes it simple for citizens to contact their representatives wit
 
 - Node.js 18+ and npm
 - OpenAI API key (required for email drafting)
-- Congress.gov API key (optional for bill autocomplete)
+- Congress.gov API key (optional for federal bill search)
+- Open States API key (optional for state bill search)
 
 ### 1. Clone and Install
 
@@ -75,12 +101,17 @@ Then add your API keys to `.env.local`:
 2. Create a new API key
 3. Copy the key to `OPENAI_API_KEY`
 
-**Congress.gov API (Optional - for bill autocomplete):**
+**Congress.gov API (Optional - for federal bill search):**
 1. Go to [Congress.gov API](https://api.congress.gov/sign-up/)
 2. Sign up for a free API key (5,000 requests/hour)
 3. Copy the key to `CONGRESS_API_KEY`
 
-**Note:** The app will work without the Congress API key, but bill autocomplete won't be available.
+**Open States API (Optional - for state bill search):**
+1. Go to [Open States API](https://openstates.org/api/register/)
+2. Register for a free API key (500 requests/day)
+3. Copy the key to `OPENSTATES_API_KEY`
+
+**Note:** The app will work without the bill search API keys, but you won't be able to browse federal or state legislation.
 
 ### 3. Run Locally
 
@@ -114,9 +145,11 @@ Then:
   /privacy
     page.tsx                # Privacy Policy page
   /api
-    /reps/route.ts          # Officials lookup endpoint (5 Calls API)
-    /ai/draft/route.ts      # Email draft generation endpoint (OpenAI)
-    /bills/search/route.ts  # Bill search endpoint (Congress.gov API)
+    /reps/route.ts                        # Officials lookup endpoint (5 Calls API)
+    /ai/draft/route.ts                    # Email draft generation endpoint (OpenAI)
+    /bills/search/route.ts                # Federal bill search (Congress.gov API)
+    /bills/search-state/route.ts          # State bill search (Open States API)
+    /bills/[congress]/[type]/[number]     # Federal bill details endpoint
   /actions
     draftEmail.ts           # Server action for OpenAI calls
   /components
@@ -129,9 +162,12 @@ Then:
     OfficialsList.tsx       # Officials grid with draft management
   /lib
     civic.ts                # 5 Calls API response mapper
+    openstates.ts           # Open States API client with caching
+    billVoting.ts           # Bill voting logic (who can vote on what)
     mailto.ts               # mailto: URL builder
     rateLimit.ts            # In-memory rate limiter
     schemas.ts              # Zod validation schemas
+    sessionStorage.ts       # Client-side session persistence
   page.tsx                  # Main page
   layout.tsx                # Root layout with metadata and JSON-LD
   sitemap.ts                # Auto-generated sitemap.xml
@@ -158,7 +194,8 @@ Then:
 2. Import your repository in [Vercel](https://vercel.com)
 3. Add environment variables in Vercel dashboard:
    - `OPENAI_API_KEY` (required)
-   - `CONGRESS_API_KEY` (optional)
+   - `CONGRESS_API_KEY` (optional, for federal bills)
+   - `OPENSTATES_API_KEY` (optional, for state bills)
 4. Deploy
 
 The app uses Edge Runtime for all API routes, making it fast and globally distributed.
@@ -176,11 +213,30 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
 ### ✅ Completed (Production)
 - [x] Officials lookup (5 Calls API)
 - [x] AI email drafting (OpenAI)
-- [x] Bill search and autocomplete (Congress.gov API)
-- [x] Bill Explorer page with status filtering and Load More
-- [x] Smart topic selection dropdown with auto-detection
-- [x] Seamless bill selection flow (explorer → homepage pre-fill)
-- [x] Direct links to official bill text on Congress.gov
+- [x] **Federal Bills**: Congress.gov API integration
+  - [x] Bill search and autocomplete
+  - [x] Bill Explorer page with status filtering
+  - [x] Load More pagination
+  - [x] Direct links to Congress.gov
+- [x] **State Bills**: Open States API v3 integration
+  - [x] Search across all 50 states
+  - [x] State-specific filtering
+  - [x] Pagination and caching (5-min TTL)
+  - [x] Direct links to OpenStates.org
+- [x] **Smart Voting Logic**:
+  - [x] "Can Vote" badges for eligible officials
+  - [x] Officials separated by voting eligibility
+  - [x] Federal/state bill detection
+- [x] **Web Form Contact Guide**:
+  - [x] Auto-copy draft to clipboard
+  - [x] Opens contact form in new tab
+  - [x] Step-by-step instructions
+  - [x] Toast notifications
+- [x] **UX Enhancements**:
+  - [x] One-click copy-to-clipboard button
+  - [x] Smart topic selection with auto-detection
+  - [x] Seamless bill selection flow (explorer → homepage)
+  - [x] Session persistence for address lookup
 - [x] About and Privacy pages
 - [x] SEO optimization (sitemap, robots.txt, structured data)
 - [x] Research-backed issue topics
@@ -196,11 +252,11 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
 - [ ] **Phone Scripts**: Generate 30-second call scripts
 - [ ] **Action Tracking**: "I sent it" button to measure impact
 - [ ] **Blog/Content**: Educational content for SEO
-- [ ] **State Bills**: OpenStates API integration
 - [ ] **Upstash Redis**: Production-grade rate limiting
 - [ ] **Analytics**: Privacy-respecting usage metrics (Plausible)
 - [ ] **Email Collection** (optional): For impact updates
 - [ ] **Advanced Bill Context**: Full bill text, sponsors, vote history
+- [ ] **Automated Web Form Filling**: Browser extension or automation
 
 ## Privacy & Ethics
 
