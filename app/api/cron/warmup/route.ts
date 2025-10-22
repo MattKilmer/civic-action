@@ -50,9 +50,9 @@ export async function GET(req: NextRequest) {
         const warmupUrl = `${productionUrl}/api/bills/search-state?q=budget&jurisdiction=${encodeURIComponent(state)}`;
 
         // Add timeout to prevent any single state from holding up the whole warmup
-        // Each state gets max 5 seconds (4 states * 5s = 20s total, under 25s limit)
+        // Each state gets max 10 seconds (all run in parallel, so total = 10s)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         try {
           const response = await fetch(warmupUrl, {
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
           clearTimeout(timeoutId);
           // Timeout or other error
           const isTimeout = error instanceof Error && error.name === 'AbortError';
-          console.log(`[Warmup] ${state}: ${isTimeout ? 'timeout (5s)' : 'error'}`);
+          console.log(`[Warmup] ${state}: ${isTimeout ? 'timeout (10s)' : 'error'}`);
 
           return {
             state,
