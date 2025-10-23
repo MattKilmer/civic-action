@@ -204,6 +204,10 @@ See `.env.local.example` for setup instructions.
   - `limit` - Number of results (default: 10 for autocomplete, 200 for explorer)
   - `sort` - Sort order ('recent' or 'oldest')
 - Returns: bill number, full title, truncated title, latest action status, date, type, congress
+- **Pagination for Bill Explorer**: Fetches 1,000 bills (4 batches × 250) for explorer, 250 for autocomplete
+  - Uses `offset` parameter to paginate through results
+  - Searches 1,000 of 19,315 total bills (5% coverage)
+  - Displays disclaimer with link to Congress.gov for comprehensive search
 - **Used by**:
   - Homepage autocomplete (inline search)
   - Bill Explorer page (`/bills`) with advanced filtering
@@ -239,6 +243,10 @@ See `.env.local.example` for setup instructions.
 - In-memory rate limiting (100 req/min)
 - Graceful degradation: returns empty array with error message if API key not provided or rate limit exceeded
 - **Reliability**: LegiScan is generally faster and more reliable than previous Open States API, with better rate limits
+- **Pagination Metadata**: Extracts `page_total`, `page_current`, `count` from LegiScan response
+  - Single page results: Uses actual `count` (e.g., 4 bills shows "4 of 4")
+  - Multi-page results: Estimates as `page_total × 50` (e.g., "20 of 53,700")
+  - Displays accurate total counts and remaining bills in Load More button
 
 ## Styling
 
