@@ -28,7 +28,9 @@ A web app that makes it simple for citizens to contact their representatives wit
 - **Research-Backed Issues**: Top 10 issues for young voters based on Harvard Youth Poll, Pew Research, and AP-NORC data
 - **Smart Topic Selection**: Dropdown menu with intelligent auto-detection—select a bill and the topic is automatically filled based on bill content
 - **Bill Search & Integration**: Search federal or state bills by number or keywords, then seamlessly return to homepage with bill info pre-filled
-- **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
+- **AI-Generated Drafts**: Get personalized, respectful email drafts and phone scripts using GPT-4o-mini
+  - Email drafts: 150-220 words, professional tone
+  - Phone scripts: 60-90 words (30-45 second calls), conversational tone
 - **Web Form Contact Guide**: For officials without public email addresses
   - Smart conditional display (only shown when official has a website URL)
   - Auto-copy draft message to clipboard
@@ -251,6 +253,7 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
   - [x] Seamless bill selection flow (explorer → homepage)
   - [x] Session persistence for address lookup
   - [x] Smart address input (guides users to enter full street addresses for accurate results)
+- [x] **Phone Scripts**: AI-generated 30-45 second call scripts (60-90 words, conversational tone)
 - [x] About and Privacy pages
 - [x] SEO optimization (sitemap, robots.txt, structured data)
 - [x] Research-backed issue topics
@@ -263,7 +266,6 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
 - [ ] Gather user feedback
 
 ### 📋 Planned (Post-MVP)
-- [ ] **Phone Scripts**: Generate 30-second call scripts
 - [ ] **Action Tracking**: "I sent it" button to measure impact
 - [ ] **Blog/Content**: Educational content for SEO
 - [ ] **Upstash Redis**: Production-grade rate limiting
