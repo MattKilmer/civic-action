@@ -148,7 +148,7 @@ function PageContent() {
               Enter your address
             </h2>
           </div>
-          <AddressForm onSubmit={fetchOfficials} />
+          <AddressForm onSubmit={fetchOfficials} defaultValue={submittedAddress} />
         </section>
 
         {/* Location Status */}

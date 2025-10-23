@@ -1,8 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function AddressForm({ onSubmit }: { onSubmit: (address: string) => void }) {
-  const [address, setAddress] = useState("");
+export default function AddressForm({ onSubmit, defaultValue }: { onSubmit: (address: string) => void; defaultValue?: string | null }) {
+  const [address, setAddress] = useState(defaultValue || "");
+
+  // Update address when defaultValue changes (e.g., when loaded from session)
+  useEffect(() => {
+    if (defaultValue) {
+      setAddress(defaultValue);
+    }
+  }, [defaultValue]);
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <form
