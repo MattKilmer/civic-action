@@ -86,6 +86,9 @@ export default function OfficialsList({ officials, issue, location }: {
   const votingDescription = getVotingDescription(issue?.bill, billInfo?.jurisdiction);
   const showInfoBanner = votingDescription && !infoBannerDismissed;
 
+  // Updated validation: Topic is optional if bill is selected, but stance is always required
+  const isIssueValid = !!(issue && (issue.bill || issue.topic) && issue.stance);
+
   return (
     <div className="space-y-6">
       {/* Info Banner */}
@@ -129,7 +132,7 @@ export default function OfficialsList({ officials, issue, location }: {
                 onDraft={() => draftFor(o)}
                 phoneScript={phoneScripts[o.name + o.role]}
                 onPhoneScript={() => phoneScriptFor(o)}
-                hasIssue={!!issue}
+                hasIssue={isIssueValid}
                 canVote={o.canVote}
                 billNumber={issue?.bill}
               />
@@ -156,7 +159,7 @@ export default function OfficialsList({ officials, issue, location }: {
                 onDraft={() => draftFor(o)}
                 phoneScript={phoneScripts[o.name + o.role]}
                 onPhoneScript={() => phoneScriptFor(o)}
-                hasIssue={!!issue}
+                hasIssue={isIssueValid}
                 canVote={o.canVote}
                 billNumber={issue?.bill}
               />

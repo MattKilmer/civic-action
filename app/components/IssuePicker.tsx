@@ -138,6 +138,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [searchingBills, setSearchingBills] = useState(false);
   const isAutoDetectingRef = useRef(false); // Track if we're auto-detecting topic from bill
+  const topicSectionRef = useRef<HTMLDivElement>(null); // Ref for scrolling to topic section
 
   // Call onChange whenever issue state changes
   useEffect(() => {
@@ -381,136 +382,49 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
 
   const showCustomTopicField = selectedTopicValue === "OTHER";
 
+  // Handle "Skip to general topic" button
+  const handleSkipToTopic = () => {
+    topicSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Stance Selection */}
-      <div>
-        <label className="block font-semibold text-gray-700 mb-2 text-sm">
-          Your Stance <span className="text-red-600">*</span>
+      {/* 1. BILL NUMBER - Promoted to Top Position */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+        <label className="block font-semibold text-gray-900 text-base">
+          Find Specific Legislation
         </label>
-        <div className="flex gap-2">
-          {(["support", "oppose"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => update("stance", s)}
-              className={`px-4 py-2 rounded-md border font-semibold text-sm transition-colors capitalize focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                issue.stance === s
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-900 border-gray-300 hover:bg-gray-50"
-              }`}
-              type="button"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Topic Dropdown */}
-      <div>
-        <label htmlFor="topic-select" className="block font-semibold text-gray-700 mb-2 text-sm">
-          Issue Topic <span className="text-red-600">*</span>
-        </label>
-        <select
-          id="topic-select"
-          value={selectedTopicValue}
-          onChange={(e) => handleTopicChange(e.target.value)}
-          className="w-full border border-gray-300 text-gray-900 bg-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        <p className="text-sm text-gray-700">
+          For maximum influence, cite specific legislation your representative will vote on.
+        </p>
+
+        {/* "Browse legislation" link - MOVED ABOVE input */}
+        <Link
+          href="/bills"
+          className="flex items-center gap-2 text-base font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
         >
-          {TOPIC_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value} disabled={!option.value && option.value !== "OTHER"}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Not sure which bill? Browse legislation
+        </Link>
 
-      {/* Custom Topic Input (conditional) */}
-      {showCustomTopicField && (
-        <div>
-          <label htmlFor="custom-topic" className="block font-semibold text-gray-700 mb-1 text-sm">
-            Specify your topic <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="custom-topic"
-            type="text"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="e.g., Infrastructure spending"
-            value={customTopic}
-            onChange={(e) => handleCustomTopicChange(e.target.value)}
-          />
-        </div>
-      )}
-
-      {/* Bill Summary Display */}
-      {loadingSummary && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-blue-900">
-            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="text-sm font-medium">Loading bill summary...</span>
-          </div>
-        </div>
-      )}
-
-      {!loadingSummary && issue.billSummary && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setSummaryExpanded(!summaryExpanded)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="font-semibold text-blue-900 text-sm">
-                Bill Summary
-              </h3>
-            </div>
-            <svg
-              className={`w-4 h-4 text-blue-700 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {summaryExpanded && (
-            <div className="px-4 pb-4 pt-2">
-              <div className="text-sm text-gray-700 max-h-60 overflow-y-auto pr-2 custom-scrollbar" style={{ lineHeight: '1.6' }}>
-                {issue.billSummary}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Optional Fields */}
-      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Bill search input + button */}
         <div className="relative">
-          <label htmlFor="bill-number" className="block font-semibold text-gray-700 mb-1 text-sm">
-            Bill Number <span className="text-gray-500 font-normal">(optional)</span>
-          </label>
           <div className="flex gap-2">
             <input
               id="bill-number"
               type="text"
-              className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="flex-1 border border-gray-300 rounded-md px-3 py-3 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="e.g., HR 1234, CA AB 123"
               value={billSearchInput}
-              onChange={(e) => {
-                setBillSearchInput(e.target.value);
-              }}
+              onChange={(e) => setBillSearchInput(e.target.value)}
               onKeyDown={handleBillSearchKeyDown}
               onFocus={() => {
                 if (billSuggestions.length > 0) setShowSuggestions(true);
               }}
               onBlur={() => {
-                // Delay to allow clicking suggestions
                 setTimeout(() => setShowSuggestions(false), 200);
               }}
             />
@@ -518,7 +432,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
               type="button"
               onClick={handleBillSearch}
               disabled={searchingBills}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {searchingBills ? (
                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -613,33 +527,155 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
               ))}
             </div>
           )}
-
-          {/* Explore Bills Link */}
-          <Link
-            href="/bills"
-            className="inline-flex items-center gap-1 mt-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Explore all bills
-          </Link>
         </div>
+
+        <p className="text-sm text-gray-600">
+          Citing specific legislation gives your message more weight with congressional staff who track bill-specific constituent feedback.
+        </p>
+
+        {/* "Skip to general topic" link */}
+        <button
+          type="button"
+          onClick={handleSkipToTopic}
+          className="text-sm text-gray-600 hover:text-gray-800 underline transition-colors"
+        >
+          Or skip to general topic selection
+        </button>
+      </div>
+
+      {/* 2. TOPIC DROPDOWN - With conditional label */}
+      <div ref={topicSectionRef}>
+        <label htmlFor="topic-select" className="block font-semibold text-gray-700 mb-2 text-sm">
+          Issue Topic{' '}
+          {issue.bill ? (
+            <span className="text-gray-500 font-normal">(auto-detected)</span>
+          ) : (
+            <span className="text-red-600">*</span>
+          )}
+        </label>
+
+        {issue.bill && (
+          <p className="text-xs text-gray-600 mb-2">
+            You can change this if the auto-detection is incorrect
+          </p>
+        )}
+
+        <select
+          id="topic-select"
+          value={selectedTopicValue}
+          onChange={(e) => handleTopicChange(e.target.value)}
+          className="w-full border border-gray-300 text-gray-900 bg-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+        >
+          {TOPIC_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value} disabled={!option.value && option.value !== "OTHER"}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 3. CUSTOM TOPIC INPUT (conditional) */}
+      {showCustomTopicField && (
         <div>
-          <label htmlFor="desired-action" className="block font-semibold text-gray-700 mb-1 text-sm">
-            Desired Action <span className="text-gray-500 font-normal">(optional)</span>
+          <label htmlFor="custom-topic" className="block font-semibold text-gray-700 mb-1 text-sm">
+            Specify your topic <span className="text-red-600">*</span>
           </label>
           <input
-            id="desired-action"
+            id="custom-topic"
             type="text"
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder="e.g., Please vote yes"
-            onChange={(e) => update("desiredAction", e.target.value)}
+            placeholder="e.g., Infrastructure spending"
+            value={customTopic}
+            onChange={(e) => handleCustomTopicChange(e.target.value)}
           />
+        </div>
+      )}
+
+      {/* 4. BILL SUMMARY DISPLAY */}
+      {loadingSummary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-blue-900">
+            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-sm font-medium">Loading bill summary...</span>
+          </div>
+        </div>
+      )}
+
+      {!loadingSummary && issue.billSummary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setSummaryExpanded(!summaryExpanded)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="font-semibold text-blue-900 text-sm">
+                Bill Summary
+              </h3>
+            </div>
+            <svg
+              className={`w-4 h-4 text-blue-700 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {summaryExpanded && (
+            <div className="px-4 pb-4 pt-2">
+              <div className="text-sm text-gray-700 max-h-60 overflow-y-auto pr-2 custom-scrollbar" style={{ lineHeight: '1.6' }}>
+                {issue.billSummary}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 5. STANCE SELECTION - Moved after bill/topic */}
+      <div>
+        <label className="block font-semibold text-gray-700 mb-2 text-sm">
+          Your Stance <span className="text-red-600">*</span>
+        </label>
+        <div className="flex gap-2">
+          {(["support", "oppose"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => update("stance", s)}
+              className={`px-4 py-2 rounded-md border font-semibold text-sm transition-colors capitalize focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                issue.stance === s
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-900 border-gray-300 hover:bg-gray-50"
+              }`}
+              type="button"
+            >
+              {s}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Personal Impact */}
+      {/* 6. DESIRED ACTION - Full-width, moved up with dynamic placeholder */}
+      <div>
+        <label htmlFor="desired-action" className="block font-semibold text-gray-700 mb-2 text-sm">
+          Desired Action <span className="text-gray-500 font-normal">(optional)</span>
+        </label>
+        <input
+          id="desired-action"
+          type="text"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          placeholder={issue.bill ? "e.g., Please vote yes on this bill" : "e.g., Please support climate action"}
+          onChange={(e) => update("desiredAction", e.target.value)}
+        />
+      </div>
+
+      {/* 7. PERSONAL IMPACT - Unchanged */}
       <div>
         <label htmlFor="personal-impact" className="block font-semibold text-gray-700 mb-1 text-sm">
           Personal Impact <span className="text-gray-500 font-normal">(optional)</span>
@@ -656,7 +692,7 @@ export default function IssuePicker({ onChange, initialBillNumber, initialBillTi
         </p>
       </div>
 
-      {/* Tone Selection */}
+      {/* 8. TONE SELECTION - Unchanged */}
       <div>
         <label className="block font-semibold text-gray-700 mb-2 text-sm">
           Message Tone
