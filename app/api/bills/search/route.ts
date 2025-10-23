@@ -73,26 +73,47 @@ export async function GET(req: NextRequest) {
       apiPath += `/${billTypeFilter}`;
     }
 
-    const url = new URL(apiPath);
-    url.searchParams.set('format', 'json');
-    // Fetch more than requested to allow for filtering
-    url.searchParams.set('limit', Math.min(limit * 2, 250).toString());
-    url.searchParams.set('sort', sortOrder);
+    // For Bill Explorer (limit >= 200), fetch 1,000 bills via pagination
+    // For autocomplete (limit < 200), fetch 250 bills
+    const shouldPaginate = limit >= 200;
+    const batches = shouldPaginate ? 4 : 1; // 4 batches = 1,000 bills
+    const batchSize = 250; // Max API limit
 
-    const res = await fetch(url.toString(), {
-      headers: {
-        'X-Api-Key': apiKey,
-      },
-      // Cache responses for 1 hour to reduce API usage
-      next: { revalidate: 3600 },
-    });
+    let allBills: CongressBill[] = [];
 
-    if (!res.ok) {
-      console.error('Congress API error:', res.status, await res.text());
-      return Response.json([]);
+    // Fetch bills in batches
+    for (let i = 0; i < batches; i++) {
+      const url = new URL(apiPath);
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('limit', batchSize.toString());
+      url.searchParams.set('offset', (i * batchSize).toString());
+      url.searchParams.set('sort', sortOrder);
+
+      const res = await fetch(url.toString(), {
+        headers: {
+          'X-Api-Key': apiKey,
+        },
+        // Cache responses for 1 hour to reduce API usage
+        next: { revalidate: 3600 },
+      });
+
+      if (!res.ok) {
+        console.error('Congress API error:', res.status, await res.text());
+        // Continue with what we have so far
+        break;
+      }
+
+      const data = await res.json() as CongressApiResponse;
+      allBills = allBills.concat(data.bills);
+
+      // If we got fewer than 250 bills, we've reached the end
+      if (data.bills.length < batchSize) {
+        break;
+      }
     }
 
-    const data = await res.json() as CongressApiResponse;
+    // Use combined results
+    const data = { bills: allBills };
 
     // Filter bills by query (search in number and title)
     const queryLower = query.toLowerCase();
