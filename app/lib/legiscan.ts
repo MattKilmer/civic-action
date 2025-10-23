@@ -301,9 +301,10 @@ export async function searchStateBills(params: {
         .slice(0, params.perPage || 20); // Limit to requested perPage
 
       // Calculate total count from pagination info
-      // LegiScan returns ~50 results per page by default
-      // We can estimate total count from page_total
-      const estimatedTotalCount = summary.page_total * 50;
+      // If only 1 page, use actual count. If multiple pages, estimate from page_total
+      const estimatedTotalCount = summary.page_total === 1
+        ? summary.count  // Single page: use actual count
+        : summary.page_total * 50;  // Multiple pages: estimate (LegiScan returns ~50/page)
 
       // Cache the result with pagination info
       const result = {
