@@ -123,7 +123,7 @@ export default function OfficialsList({ officials, issue, location }: {
             </svg>
             Can Vote on This Bill
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {votingOfficials.map((o) => (
               <OfficialCard
                 key={o.name + o.role}
@@ -150,7 +150,7 @@ export default function OfficialsList({ officials, issue, location }: {
             </svg>
             Can Advocate & Influence
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {nonVotingOfficials.map((o) => (
               <OfficialCard
                 key={o.name + o.role}
