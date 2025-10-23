@@ -1,6 +1,6 @@
 # Next Session Preparation
 
-**Last Updated**: October 22, 2025 (Post-Address Form Improvements)
+**Last Updated**: October 23, 2025 (Post-Section #2 Optimization)
 **Status**: Production deployment complete, ready for user feedback
 
 ## What's Currently Live in Production
@@ -69,6 +69,42 @@
    - About and Privacy pages
 
 ## Recent Changes (Latest Sessions)
+
+### Session: October 23, 2025 - Section #2 UX Optimization ✅ **COMPLETED**
+**Features Added:**
+1. **Bill-first prioritization**: Bill search moved to top position in prominent blue box
+2. **Dynamic topic field**: Now optional when bill selected, shows "(auto-detected)" label
+3. **Logical field order**: Bill → Topic → Stance → Desired Action → Personal Impact → Tone
+4. **Educational helper text**: Explains why bills matter for civic impact
+5. **"Browse legislation" link**: Moved above input with enhanced icon styling
+6. **"Skip to general topic" link**: Added for users who want topic-first flow
+7. **Dynamic placeholder**: Changes based on bill selection ("vote yes on this bill" vs "support climate action")
+8. **Increased prominence**: Larger input/button heights (py-3 vs py-2)
+
+**UX Improvements:**
+- Stance moved after bill/topic (logical flow: What → Position → Details)
+- Desired Action now full-width (no longer in 2-column grid)
+- Blue background box on bill section for visual hierarchy
+- Smooth scroll to topic section when "Skip" clicked
+- Helper text when topic auto-detected: "You can change this if incorrect"
+
+**Validation Updates:**
+- Topic optional when bill selected: `(bill OR topic) AND stance`
+- Draft buttons enable correctly with bill-only selection
+
+**Testing Completed:**
+✅ Bill-first flow (auto-detect topic, voting power indicators)
+✅ Topic-first flow (traditional path preserved)
+✅ Validation (bill without topic works correctly)
+✅ Desktop (1440px) / Tablet (768px) / Mobile (375px)
+✅ Keyboard navigation (proper tab order)
+✅ All buttons and links functional
+
+**Expected Impact:**
+- +30-50% bill discovery rate (prominent placement)
+- +20-40% bill selection rate (educational messaging)
+- +10-15% form completion (logical flow reduces abandonment)
+- Higher quality messages (concrete legislation = better advocacy)
 
 ### Session: October 22, 2025 - Address Form Improvements
 **Features Added:**
@@ -286,6 +322,33 @@ pkill -f "next dev"      # Kill stuck dev server
 - `README.md` - Main project documentation
 - `docs/SESSION_SUMMARY_*.md` - Session summaries
 - `CLAUDE.md` - Claude Code guidance
+
+## Planned Work for Next Session
+
+### ✅ **COMPLETED**: Section #2 Optimization
+See above for full details. All planned changes implemented and deployed.
+
+### 🎯 Potential Next Priorities
+
+**User Engagement**:
+- [ ] Monitor Section #2 user behavior (bill selection rate, form completion)
+- [ ] Gather feedback on new bill-first flow
+- [ ] A/B test impact on draft generation rate
+
+**Phone Scripts** (Top Request):
+- [ ] Add phone script generation (30-second guided scripts)
+- [ ] Test call script UX and user adoption
+
+**Analytics Setup**:
+- [ ] Add Plausible for privacy-respecting analytics
+- [ ] Track key metrics (bill selection, draft generation, contact methods)
+
+**SEO & Content**:
+- [ ] Submit sitemap to Google Search Console
+- [ ] Create educational content about effective civic action
+- [ ] Monitor keyword rankings and organic traffic
+
+---
 
 ## Questions for Next Session
 
