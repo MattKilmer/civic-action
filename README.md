@@ -14,7 +14,11 @@ A web app that makes it simple for citizens to contact their representatives wit
 - **Comprehensive Coverage**: Includes federal (House, Senate) and state (Governor, AG, Sec of State, legislators)
 - **Bill Explorer**: Browse and search **both federal and state legislation**
   - **Federal Bills**: Congress.gov API with status filtering (active, enacted, passed house/senate, introduced)
+    - Searches 1,000 most recent bills with honest disclosure about coverage
+    - Link to Congress.gov advanced search for comprehensive results
   - **State Bills**: LegiScan API covering all 50 states with search, pagination, and on-demand summaries
+    - Accurate pagination display showing total bills across all pages (e.g., "Showing 20 of 53,700 bills")
+    - Smart count calculation for single vs multi-page results
   - Load More pagination for extensive results
   - Direct links to official bill text on Congress.gov and LegiScan.com
 - **Smart Voting Badges**: Automatically identifies which officials can directly vote on selected bills
@@ -26,6 +30,7 @@ A web app that makes it simple for citizens to contact their representatives wit
 - **Bill Search & Integration**: Search federal or state bills by number or keywords, then seamlessly return to homepage with bill info pre-filled
 - **AI-Generated Drafts**: Get personalized, respectful email drafts using GPT-4o-mini
 - **Web Form Contact Guide**: For officials without public email addresses
+  - Smart conditional display (only shown when official has a website URL)
   - Auto-copy draft message to clipboard
   - Opens official's contact page in new tab
   - Step-by-step instructions for filling web forms
@@ -217,12 +222,16 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
 - [x] **Federal Bills**: Congress.gov API integration
   - [x] Bill search and autocomplete
   - [x] Bill Explorer page with status filtering
+  - [x] Enhanced search coverage (1,000 bills via pagination)
+  - [x] Honest disclosure about search limitations with escape hatch to Congress.gov
   - [x] Load More pagination
   - [x] Direct links to Congress.gov
 - [x] **State Bills**: LegiScan API integration
   - [x] Search across all 50 states
   - [x] State-specific filtering
   - [x] On-demand summary fetching
+  - [x] Accurate pagination display (total bills across all pages)
+  - [x] Smart count calculation (single vs multi-page results)
   - [x] Pagination and caching (5-min TTL)
   - [x] 60x better rate limits (30k/month vs 500/day)
   - [x] Direct links to LegiScan.com
@@ -231,6 +240,7 @@ The app uses Edge Runtime for all API routes, making it fast and globally distri
   - [x] Officials separated by voting eligibility
   - [x] Federal/state bill detection
 - [x] **Web Form Contact Guide**:
+  - [x] Smart conditional display (only shown when website exists)
   - [x] Auto-copy draft to clipboard
   - [x] Opens contact form in new tab
   - [x] Step-by-step instructions
