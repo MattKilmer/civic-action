@@ -32,6 +32,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
 
   const email = official.emails?.[0];
   const hasEmail = !!(email && email.trim().length > 0);
+  const hasWebsite = !!(official.primaryUrl || official.urls?.[0]);
   const subject = `Constituent regarding ${official.role}`;
   const mailto = email && draft ? mailtoHref(email, subject, draft) : undefined;
   const canDraft = hasIssue && !draft;
@@ -172,7 +173,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
                 Can vote
               </span>
             )}
-            {!hasEmail && draft && (
+            {!hasEmail && draft && hasWebsite && (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium"
                 aria-label="Contact via web form required"
@@ -277,7 +278,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
             Send email to {official.name.split(" ")[0]}
           </a>
         )}
-        {!hasEmail && draft && (
+        {!hasEmail && draft && hasWebsite && (
           <button
             className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 font-semibold px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm inline-flex items-center gap-2"
             onClick={handleWebFormContact}
@@ -343,7 +344,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
       )}
 
       {/* Web Form Contact Instructions */}
-      {showWebFormGuide && !hasEmail && draft && (
+      {showWebFormGuide && !hasEmail && draft && hasWebsite && (
         <div className="border-t border-gray-200 pt-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
             <div className="flex items-start gap-3">
