@@ -675,7 +675,6 @@ export default function BillExplorerPage() {
                     <>
                       {selectedState !== 'all' ? `${selectedState} state bills` : 'All state bills'}
                       {searchQuery && ` • Searching: "${searchQuery}"`}
-                      {totalStateBills > 0 && ` • ${maxPage} pages available`}
                     </>
                   )}
                 </p>
