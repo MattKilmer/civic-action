@@ -250,11 +250,10 @@ export default function BillExplorerPage() {
 
           const data = await res.json();
 
-          // Store pagination info
-          setTotalStateBills(data.count || 0);
-          setCurrentPage(1);
-          // Note: API doesn't return max_page, we'll estimate based on results
-          setMaxPage(data.bills && data.bills.length === 20 ? 2 : 1);
+          // Store pagination info from LegiScan
+          setTotalStateBills(data.totalCount || 0);  // Total across all pages
+          setCurrentPage(data.currentPage || 1);
+          setMaxPage(data.totalPages || 1);
 
           // Map state bill response to Bill interface
           const mappedBills: Bill[] = (data.bills || []).map((bill: any) => ({
@@ -662,7 +661,9 @@ export default function BillExplorerPage() {
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
               <div>
                 <p className="text-sm text-gray-900 font-medium">
-                  {loading ? 'Loading...' : `Showing ${filteredBills.length} of ${totalFiltered} bills`}
+                  {loading ? 'Loading...' : billLevel === 'state' && totalStateBills > 0
+                    ? `Showing ${bills.length} of ${totalStateBills.toLocaleString()} bills`
+                    : `Showing ${filteredBills.length} of ${totalFiltered} bills`}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {billLevel === 'federal' ? (
@@ -674,6 +675,7 @@ export default function BillExplorerPage() {
                     <>
                       {selectedState !== 'all' ? `${selectedState} state bills` : 'All state bills'}
                       {searchQuery && ` • Searching: "${searchQuery}"`}
+                      {totalStateBills > 0 && ` • ${maxPage} pages available`}
                     </>
                   )}
                 </p>
@@ -967,11 +969,12 @@ export default function BillExplorerPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                       Load More Bills
+                      {totalStateBills > bills.length && ` (${(totalStateBills - bills.length).toLocaleString()} remaining)`}
                     </>
                   )}
                 </button>
                 <p className="text-sm text-gray-500 mt-2">
-                  Showing {bills.length} bills
+                  Showing {bills.length} of {totalStateBills.toLocaleString()} bills
                 </p>
               </div>
             )}

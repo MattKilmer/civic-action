@@ -58,7 +58,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       bills: result.bills,
-      count: result.bills.length,
+      count: result.bills.length,        // Bills on current page
+      totalCount: result.totalCount,     // Total bills across all pages
+      currentPage: result.currentPage,   // Current page number
+      totalPages: result.totalPages,     // Total pages available
     });
   } catch (error) {
     console.error("State bill search error:", error);

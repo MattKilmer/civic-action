@@ -17,7 +17,12 @@ const requestTimestamps: number[] = [];
 
 // Simple in-memory cache for search results (5 minute TTL)
 interface CacheEntry {
-  data: { bills: NormalizedStateBill[] };
+  data: {
+    bills: NormalizedStateBill[];
+    totalCount?: number;
+    currentPage?: number;
+    totalPages?: number;
+  };
   timestamp: number;
 }
 const searchCache = new Map<string, CacheEntry>();
@@ -37,7 +42,12 @@ function getCacheKey(params: {
   });
 }
 
-function getFromCache(key: string): { bills: NormalizedStateBill[] } | null {
+function getFromCache(key: string): {
+  bills: NormalizedStateBill[];
+  totalCount?: number;
+  currentPage?: number;
+  totalPages?: number;
+} | null {
   const entry = searchCache.get(key);
   if (!entry) return null;
 
@@ -50,7 +60,12 @@ function getFromCache(key: string): { bills: NormalizedStateBill[] } | null {
   return entry.data;
 }
 
-function setInCache(key: string, data: { bills: NormalizedStateBill[] }): void {
+function setInCache(key: string, data: {
+  bills: NormalizedStateBill[];
+  totalCount?: number;
+  currentPage?: number;
+  totalPages?: number;
+}): void {
   searchCache.set(key, {
     data,
     timestamp: Date.now(),
@@ -183,7 +198,13 @@ export async function searchStateBills(params: {
   jurisdiction?: string; // Full state name (will be converted to abbreviation)
   page?: number;
   perPage?: number;
-}): Promise<{ bills: NormalizedStateBill[]; error?: string }> {
+}): Promise<{
+  bills: NormalizedStateBill[];
+  totalCount?: number;      // Total number of bills across all pages
+  currentPage?: number;     // Current page number
+  totalPages?: number;      // Total number of pages
+  error?: string;
+}> {
   // Check API key
   if (!API_KEY) {
     console.warn("LEGISCAN_API_KEY not configured");
@@ -279,8 +300,18 @@ export async function searchStateBills(params: {
         .filter((bill): bill is NormalizedStateBill => bill !== null)
         .slice(0, params.perPage || 20); // Limit to requested perPage
 
-      // Cache the result
-      const result = { bills };
+      // Calculate total count from pagination info
+      // LegiScan returns ~50 results per page by default
+      // We can estimate total count from page_total
+      const estimatedTotalCount = summary.page_total * 50;
+
+      // Cache the result with pagination info
+      const result = {
+        bills,
+        totalCount: estimatedTotalCount,
+        currentPage: summary.page_current,
+        totalPages: summary.page_total,
+      };
       setInCache(cacheKey, result);
 
       return result;
