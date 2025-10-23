@@ -719,7 +719,7 @@ export default function BillExplorerPage() {
                     rel="noopener noreferrer"
                     className="underline font-medium hover:text-blue-950 transition-colors"
                   >
-                    Congress.gov's advanced search
+                    Congress.gov&apos;s advanced search
                   </a>.
                 </p>
               </div>
