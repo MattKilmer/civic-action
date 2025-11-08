@@ -73,43 +73,49 @@ export async function GET(req: NextRequest) {
       apiPath += `/${billTypeFilter}`;
     }
 
-    // For Bill Explorer (limit >= 200), fetch 1,000 bills via pagination
-    // For autocomplete (limit < 200), fetch 250 bills
-    const shouldPaginate = limit >= 200;
-    const batches = shouldPaginate ? 4 : 1; // 4 batches = 1,000 bills
-    const batchSize = 250; // Max API limit
+    // Fetch bills in a single batch to avoid timeouts
+    // Limit to 250 bills max (Congress.gov API limit)
+    // This is sufficient for most searches and keeps response time under 10s
+    const batchSize = Math.min(limit * 2, 250); // Fetch 2x to allow for filtering
+
+    const url = new URL(apiPath);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('limit', batchSize.toString());
+    url.searchParams.set('offset', '0');
+    url.searchParams.set('sort', sortOrder);
+
+    // Add 15 second timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     let allBills: CongressBill[] = [];
 
-    // Fetch bills in batches
-    for (let i = 0; i < batches; i++) {
-      const url = new URL(apiPath);
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('limit', batchSize.toString());
-      url.searchParams.set('offset', (i * batchSize).toString());
-      url.searchParams.set('sort', sortOrder);
-
+    try {
       const res = await fetch(url.toString(), {
         headers: {
           'X-Api-Key': apiKey,
         },
+        signal: controller.signal,
         // Cache responses for 1 hour to reduce API usage
         next: { revalidate: 3600 },
       });
 
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
         console.error('Congress API error:', res.status, await res.text());
-        // Continue with what we have so far
-        break;
+        return Response.json({ error: 'Failed to fetch bills from Congress.gov' }, { status: res.status });
       }
 
       const data = await res.json() as CongressApiResponse;
-      allBills = allBills.concat(data.bills);
-
-      // If we got fewer than 250 bills, we've reached the end
-      if (data.bills.length < batchSize) {
-        break;
+      allBills = data.bills;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('Congress API timeout after 15 seconds');
+        return Response.json({ error: 'Request timed out - Congress.gov API is slow. Please try again.' }, { status: 504 });
       }
+      throw error;
     }
 
     // Use combined results

@@ -204,12 +204,16 @@ export default function BillExplorerPage() {
           if (searchQuery) params.set('q', searchQuery);
           if (billType !== 'all') params.set('type', billType);
           params.set('sort', sortOrder);
-          params.set('limit', '200');
+          params.set('limit', '100'); // Reduced from 200 to prevent timeouts
 
           const res = await fetch(`/api/bills/search?${params.toString()}`);
 
           if (!res.ok) {
-            throw new Error('Failed to fetch federal bills');
+            const errorData = await res.json().catch(() => null);
+            if (res.status === 504) {
+              throw new Error(errorData?.error || 'Request timed out. Congress.gov API is slow. Please try again or refine your search.');
+            }
+            throw new Error(errorData?.error || 'Failed to fetch federal bills');
           }
 
           const data = await res.json();
