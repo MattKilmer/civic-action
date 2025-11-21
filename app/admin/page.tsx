@@ -4,37 +4,47 @@ import { useState, useEffect } from "react";
 import TopNav from "../components/TopNav";
 
 interface AnalyticsData {
-  // Counts
+  // Overall totals
   totalAddressLookups: number;
   totalBillSearches: number;
   totalEmailDrafts: number;
   totalAPIErrors: number;
-  rateLimitViolations: number;
+
+  // Last 24 hours
+  last24Hours: {
+    addressLookups: number;
+    billSearches: number;
+    emailDrafts: number;
+    errors: number;
+    uniqueUsers: number;
+  };
+
+  // Bill search breakdown
+  billSearchesByType: {
+    federal: number;
+    state: number;
+  };
+
+  // Top items
+  topBillSearches: Array<{ query: string; count: number }>;
+  topTopics: Array<{ topic: string; count: number }>;
+  stateDistribution: Array<{ state: string; count: number }>;
+  errorsByEndpoint: Array<{ endpoint: string; count: number }>;
+
+  // Rate limits
+  rateLimitViolations24h: number;
 
   // Time series
-  addressLookupsTimeSeries: Array<{ timestamp: number; value: number }>;
-  billSearchesTimeSeries: Array<{ timestamp: number; value: number }>;
-  emailDraftsTimeSeries: Array<{ timestamp: number; value: number }>;
-  errorsTimeSeries: Array<{ timestamp: number; value: number }>;
+  timeSeries: Array<{
+    timestamp: number;
+    addressLookups: number;
+    billSearches: number;
+    emailDrafts: number;
+    errors: number;
+  }>;
 
-  // Breakdowns
-  billSearchesByType: { federal: number; state: number };
-  topBillSearches: Array<[string, number]>;
-  topTopics: Array<[string, number]>;
-  stateDistribution: Array<[string, number]>;
-  errorsByEndpoint: Array<[string, number]>;
-  rateLimitByIP: Array<[string, number]>;
-
-  // User metrics
-  uniqueUsers: number;
-  activeUsersLastHour: number;
-  activeUsersLast24Hours: number;
-
-  // System info
-  uptime: string;
-  uptimeMs: number;
-  startTime: string;
-  lastResetTime: string;
+  // Metadata
+  generatedAt: string;
 }
 
 export default function AdminDashboard() {
@@ -196,7 +206,7 @@ export default function AdminDashboard() {
             <div>
               <h1 className="text-4xl text-gray-900 mb-2">Admin Dashboard</h1>
               <p className="text-gray-600">
-                System uptime: {data.uptime} | Last updated: {lastUpdated?.toLocaleTimeString() || "Never"}
+                Last updated: {lastUpdated?.toLocaleTimeString() || "Never"}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -256,9 +266,9 @@ export default function AdminDashboard() {
             {/* Active Users */}
             <div className="card-elevated rounded-xl p-6">
               <div className="text-sm text-gray-600 mb-1">Active Users</div>
-              <div className="text-3xl font-semibold text-gray-900">{data.uniqueUsers.toLocaleString()}</div>
+              <div className="text-3xl font-semibold text-gray-900">{data.last24Hours.uniqueUsers.toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">
-                {data.activeUsersLastHour} in last hour
+                Last 24 hours
               </div>
             </div>
 
@@ -267,7 +277,7 @@ export default function AdminDashboard() {
               <div className="text-sm text-gray-600 mb-1">API Errors</div>
               <div className="text-3xl font-semibold text-red-600">{data.totalAPIErrors.toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">
-                {data.rateLimitViolations} rate limits
+                {data.rateLimitViolations24h} rate limits (24h)
               </div>
             </div>
           </div>
@@ -280,17 +290,17 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <ActivityChart
                   label="Address Lookups"
-                  data={data.addressLookupsTimeSeries}
+                  data={data.timeSeries.map(d => ({ timestamp: d.timestamp, value: d.addressLookups }))}
                   color="bg-blue-500"
                 />
                 <ActivityChart
                   label="Bill Searches"
-                  data={data.billSearchesTimeSeries}
+                  data={data.timeSeries.map(d => ({ timestamp: d.timestamp, value: d.billSearches }))}
                   color="bg-green-500"
                 />
                 <ActivityChart
                   label="Email Drafts"
-                  data={data.emailDraftsTimeSeries}
+                  data={data.timeSeries.map(d => ({ timestamp: d.timestamp, value: d.emailDrafts }))}
                   color="bg-purple-500"
                 />
               </div>
@@ -303,10 +313,10 @@ export default function AdminDashboard() {
                 {data.topBillSearches.length === 0 ? (
                   <p className="text-gray-500 text-sm">No bill searches yet</p>
                 ) : (
-                  data.topBillSearches.map(([query, count], index) => (
+                  data.topBillSearches.map((item, index) => (
                     <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-700 truncate flex-1">{query}</span>
-                      <span className="text-sm font-semibold text-gray-900 ml-4">{count}</span>
+                      <span className="text-sm text-gray-700 truncate flex-1">{item.query}</span>
+                      <span className="text-sm font-semibold text-gray-900 ml-4">{item.count}</span>
                     </div>
                   ))
                 )}
@@ -323,10 +333,10 @@ export default function AdminDashboard() {
                 {data.topTopics.length === 0 ? (
                   <p className="text-gray-500 text-sm">No drafts yet</p>
                 ) : (
-                  data.topTopics.map(([topic, count], index) => (
+                  data.topTopics.map((item, index) => (
                     <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-700">{formatTopic(topic)}</span>
-                      <span className="text-sm font-semibold text-gray-900">{count}</span>
+                      <span className="text-sm text-gray-700">{formatTopic(item.topic)}</span>
+                      <span className="text-sm font-semibold text-gray-900">{item.count}</span>
                     </div>
                   ))
                 )}
@@ -340,10 +350,10 @@ export default function AdminDashboard() {
                 {data.stateDistribution.length === 0 ? (
                   <p className="text-gray-500 text-sm">No location data yet</p>
                 ) : (
-                  data.stateDistribution.map(([state, count], index) => (
+                  data.stateDistribution.map((item, index) => (
                     <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-700">{state}</span>
-                      <span className="text-sm font-semibold text-gray-900">{count}</span>
+                      <span className="text-sm text-gray-700">{item.state}</span>
+                      <span className="text-sm font-semibold text-gray-900">{item.count}</span>
                     </div>
                   ))
                 )}
@@ -357,10 +367,10 @@ export default function AdminDashboard() {
                 {data.errorsByEndpoint.length === 0 ? (
                   <p className="text-green-600 text-sm font-semibold">✓ No errors!</p>
                 ) : (
-                  data.errorsByEndpoint.map(([endpoint, count], index) => (
+                  data.errorsByEndpoint.map((item, index) => (
                     <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-700 font-mono text-xs">{endpoint}</span>
-                      <span className="text-sm font-semibold text-red-600">{count}</span>
+                      <span className="text-sm text-gray-700 font-mono text-xs">{item.endpoint}</span>
+                      <span className="text-sm font-semibold text-red-600">{item.count}</span>
                     </div>
                   ))
                 )}
@@ -368,42 +378,22 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Rate Limiting */}
-          {data.rateLimitViolations > 0 && (
-            <div className="card-elevated rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Rate Limit Violations (Top IPs)</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data.rateLimitByIP.map(([ip, count], index) => (
-                  <div key={index} className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="text-sm text-gray-700 font-mono truncate">{ip}</div>
-                    <div className="text-2xl font-semibold text-red-600 mt-1">{count} violations</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* System Info */}
           <div className="card-elevated rounded-xl p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">System Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="text-gray-600">Server Start Time</div>
-                <div className="text-gray-900 font-mono">{new Date(data.startTime).toLocaleString()}</div>
+                <div className="text-gray-600">Last Analytics Update</div>
+                <div className="text-gray-900 font-mono">{new Date(data.generatedAt).toLocaleString()}</div>
               </div>
               <div>
-                <div className="text-gray-600">Last Data Reset</div>
-                <div className="text-gray-900 font-mono">{new Date(data.lastResetTime).toLocaleString()}</div>
-              </div>
-              <div>
-                <div className="text-gray-600">Uptime</div>
-                <div className="text-gray-900 font-mono">{data.uptime}</div>
+                <div className="text-gray-600">Rate Limit Violations (24h)</div>
+                <div className="text-gray-900 font-mono">{data.rateLimitViolations24h}</div>
               </div>
             </div>
-            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-900">
-                <strong>Note:</strong> Analytics data is stored in-memory and will be lost when the server restarts.
-                For persistent analytics, consider integrating with Plausible Analytics or migrating to Redis/Vercel KV.
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-900">
+                <strong>Persistent Analytics:</strong> All analytics data is stored in PostgreSQL (Neon) and preserved across server restarts.
               </p>
             </div>
           </div>
