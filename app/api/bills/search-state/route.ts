@@ -11,8 +11,10 @@ export const runtime = "edge";
  */
 export async function GET(req: NextRequest) {
   // Rate limiting: 15 requests per minute (same as federal bill search)
-  const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "anonymous";
-  const userAgent = req.headers.get("user-agent") || undefined;
+  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  const ip: string = ipHeader || "anonymous";
+  const userAgentHeader = req.headers.get("user-agent");
+  const userAgent: string | undefined = userAgentHeader || undefined;
   const rateLimitResult = rateLimit(`state-bill-search:${ip}`, 15, 60);
 
   if (!rateLimitResult.ok) {
@@ -83,12 +85,14 @@ export async function GET(req: NextRequest) {
       totalPages: result.totalPages,     // Total pages available
     });
   } catch (error) {
+    const errorIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "anonymous";
+    const errorUserAgent = req.headers.get("user-agent") || undefined;
     logAPIError({
       endpoint: "/api/bills/search-state",
       error: error instanceof Error ? error.message : "Unknown error",
       statusCode: 500,
-      ip,
-      userAgent,
+      ip: errorIp,
+      userAgent: errorUserAgent,
     });
     console.error("State bill search error:", error);
     return NextResponse.json(

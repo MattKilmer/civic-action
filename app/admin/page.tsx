@@ -146,7 +146,7 @@ export default function AdminDashboard() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-focus-enhanced w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="input-focus-enhanced w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white"
                   placeholder="Enter admin password"
                   autoFocus
                 />

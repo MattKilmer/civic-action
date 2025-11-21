@@ -19,36 +19,32 @@ export const sql = neon(getDatabaseUrl());
 
 /**
  * Initialize database schema
- * Creates tables if they don't exist
+ * Creates tables and indexes if they don't exist
  */
 export async function initializeDatabase() {
   try {
-    // Analytics events table - stores all individual events
+    // Analytics events table
     await sql`
       CREATE TABLE IF NOT EXISTS analytics_events (
         id SERIAL PRIMARY KEY,
-        event_type VARCHAR(50) NOT NULL, -- 'address_lookup', 'bill_search', 'email_draft', 'api_error'
+        event_type VARCHAR(50) NOT NULL,
         timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-        -- User context (anonymized)
-        ip_hash VARCHAR(64), -- SHA-256 hash of IP
+        ip_hash VARCHAR(64),
         user_agent TEXT,
-
-        -- Event-specific data (all optional)
-        state VARCHAR(50), -- For address lookups and geographic distribution
-        bill_type VARCHAR(20), -- 'federal' or 'state'
-        jurisdiction VARCHAR(100), -- State name for state bills
-        query TEXT, -- Bill search query
-        topic VARCHAR(200), -- Email draft topic
-        endpoint VARCHAR(100), -- API endpoint for errors
-        error_message TEXT, -- Error details
-
-        -- Indexes for common queries
-        INDEX idx_event_type (event_type),
-        INDEX idx_timestamp (timestamp),
-        INDEX idx_state (state)
+        state VARCHAR(50),
+        bill_type VARCHAR(20),
+        jurisdiction VARCHAR(100),
+        query TEXT,
+        topic VARCHAR(200),
+        endpoint VARCHAR(100),
+        error_message TEXT
       )
     `;
+
+    // Create indexes for analytics_events
+    await sql`CREATE INDEX IF NOT EXISTS idx_event_type ON analytics_events(event_type)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_timestamp ON analytics_events(timestamp)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_state ON analytics_events(state)`;
 
     // Rate limit violations table
     await sql`
@@ -56,12 +52,13 @@ export async function initializeDatabase() {
         id SERIAL PRIMARY KEY,
         ip_hash VARCHAR(64) NOT NULL,
         endpoint VARCHAR(100) NOT NULL,
-        timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-        INDEX idx_ip_hash (ip_hash),
-        INDEX idx_timestamp (timestamp)
+        timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+
+    // Create indexes for rate_limit_violations
+    await sql`CREATE INDEX IF NOT EXISTS idx_rate_ip_hash ON rate_limit_violations(ip_hash)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_rate_timestamp ON rate_limit_violations(timestamp)`;
 
     console.log("Database schema initialized successfully");
     return { success: true };
