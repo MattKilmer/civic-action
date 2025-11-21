@@ -82,7 +82,7 @@ export default function PrivacyPage() {
               <div>
                 <h3 className="font-semibold text-gray-900 mb-1">Your Specific Stance or Personal Stories</h3>
                 <p className="text-gray-700">
-                  We track which general topics are popular (e.g., "healthcare" or "education"), but we never store your actual stance (support/oppose), personal stories, or any details you enter.
+                  We track which general topics are popular (e.g., &quot;healthcare&quot; or &quot;education&quot;), but we never store your actual stance (support/oppose), personal stories, or any details you enter.
                 </p>
               </div>
             </div>
