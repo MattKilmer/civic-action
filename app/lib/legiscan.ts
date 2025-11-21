@@ -267,6 +267,15 @@ export async function searchStateBills(params: {
           error: errorText,
           url,
         });
+
+        // Check if it's a rate limit error (403 or 429)
+        if (response.status === 403 || response.status === 429) {
+          return {
+            bills: [],
+            error: "State bill search temporarily unavailable (monthly API limit reached). Feature will resume December 1st. Federal bill search is still available."
+          };
+        }
+
         return {
           bills: [],
           error: `State bill search failed (${response.status}: ${response.statusText})`
@@ -277,6 +286,16 @@ export async function searchStateBills(params: {
 
       if (data.status !== "OK") {
         console.error("LegiScan API returned error status:", data);
+
+        // Check if error message indicates rate limit
+        const errorMsg = JSON.stringify(data);
+        if (errorMsg.includes("limit") || errorMsg.includes("throttle")) {
+          return {
+            bills: [],
+            error: "State bill search temporarily unavailable (monthly API limit reached). Feature will resume December 1st. Federal bill search is still available."
+          };
+        }
+
         return { bills: [], error: "State bill search failed" };
       }
 

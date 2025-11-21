@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logBillSearch, logAPIError } from '@/app/lib/logger';
 
 export const runtime = 'edge';
 
@@ -41,6 +42,9 @@ interface BillSuggestion {
  * - sort: Sort order ('recent' or 'oldest', default: 'recent')
  */
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "anonymous";
+  const userAgent = req.headers.get("user-agent") ?? undefined;
+
   const query = req.nextUrl.searchParams.get('q') || '';
   const billTypeFilter = req.nextUrl.searchParams.get('type') || 'all';
   const limitParam = req.nextUrl.searchParams.get('limit') || '10';
@@ -153,9 +157,25 @@ export async function GET(req: NextRequest) {
         congress: bill.congress,
       }));
 
+    // Log successful bill search
+    logBillSearch({
+      query,
+      billType: "federal",
+      resultsCount: bills.length,
+      ip,
+      userAgent,
+    });
+
     return Response.json(bills);
 
   } catch (error) {
+    logAPIError({
+      endpoint: "/api/bills/search",
+      error: error instanceof Error ? error.message : "Unknown error",
+      statusCode: 500,
+      ip,
+      userAgent,
+    });
     console.error('Bills search error:', error);
     return Response.json([]);
   }

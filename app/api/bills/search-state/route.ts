@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchStateBills } from "@/app/lib/legiscan";
 import { rateLimit } from "@/app/lib/rateLimit";
+import { logBillSearch, logAPIError } from "@/app/lib/logger";
 
 export const runtime = "edge";
 
@@ -49,12 +50,29 @@ export async function GET(req: NextRequest) {
                    : result.error.includes("not configured") ? 503
                    : 502; // Bad Gateway for LegiScan API errors
 
-      console.error("State bill search failed:", result.error);
+      logAPIError({
+        endpoint: "/api/bills/search-state",
+        error: result.error,
+        statusCode: status,
+        ip,
+        userAgent,
+      });
+
       return NextResponse.json(
         { error: result.error, bills: [] },
         { status }
       );
     }
+
+    // Log successful state bill search
+    logBillSearch({
+      query: query.trim(),
+      billType: "state",
+      jurisdiction,
+      resultsCount: result.bills.length,
+      ip,
+      userAgent,
+    });
 
     return NextResponse.json({
       bills: result.bills,
@@ -64,6 +82,13 @@ export async function GET(req: NextRequest) {
       totalPages: result.totalPages,     // Total pages available
     });
   } catch (error) {
+    logAPIError({
+      endpoint: "/api/bills/search-state",
+      error: error instanceof Error ? error.message : "Unknown error",
+      statusCode: 500,
+      ip,
+      userAgent,
+    });
     console.error("State bill search error:", error);
     return NextResponse.json(
       { error: "Internal server error", bills: [] },
