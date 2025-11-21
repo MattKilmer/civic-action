@@ -7,10 +7,10 @@
  * - Datadog, New Relic, etc.
  * - Custom log aggregation service
  *
- * Also feeds data to in-memory analytics aggregator for admin dashboard.
+ * Also feeds data to PostgreSQL database for persistent analytics.
  */
 
-import analytics from "./analytics";
+import * as analyticsDB from "./analyticsDB";
 
 type LogLevel = "info" | "warn" | "error";
 
@@ -81,9 +81,11 @@ export function logAddressLookup(params: {
     { ip: params.ip, userAgent: params.userAgent }
   );
 
-  // Feed to analytics aggregator
+  // Feed to database analytics
   if (params.ip) {
-    analytics.trackAddressLookup(params.ip, params.state);
+    analyticsDB.trackAddressLookup(params.ip, params.state).catch(err =>
+      console.error("Failed to track address lookup in DB:", err)
+    );
   }
 }
 
@@ -110,13 +112,15 @@ export function logBillSearch(params: {
     { ip: params.ip, userAgent: params.userAgent }
   );
 
-  // Feed to analytics aggregator
+  // Feed to database analytics
   if (params.ip) {
-    analytics.trackBillSearch(
+    analyticsDB.trackBillSearch(
       params.ip,
       params.query,
       params.billType,
       params.jurisdiction
+    ).catch(err =>
+      console.error("Failed to track bill search in DB:", err)
     );
   }
 }
@@ -146,9 +150,11 @@ export function logEmailDraft(params: {
     { ip: params.ip, userAgent: params.userAgent }
   );
 
-  // Feed to analytics aggregator
+  // Feed to database analytics
   if (params.ip) {
-    analytics.trackEmailDraft(params.ip, params.topic);
+    analyticsDB.trackEmailDraft(params.ip, params.topic).catch(err =>
+      console.error("Failed to track email draft in DB:", err)
+    );
   }
 }
 
@@ -173,9 +179,20 @@ export function logAPIError(params: {
     { ip: params.ip, userAgent: params.userAgent }
   );
 
-  // Feed to analytics aggregator
-  const isRateLimit = params.statusCode === 429 || params.error.toLowerCase().includes("rate limit");
-  analytics.trackAPIError(params.endpoint, isRateLimit, params.ip);
+  // Feed to database analytics
+  if (params.ip) {
+    const isRateLimit = params.statusCode === 429 || params.error.toLowerCase().includes("rate limit");
+
+    if (isRateLimit) {
+      analyticsDB.trackRateLimitViolation(params.ip, params.endpoint).catch(err =>
+        console.error("Failed to track rate limit violation in DB:", err)
+      );
+    }
+
+    analyticsDB.trackAPIError(params.endpoint, params.error, params.ip).catch(err =>
+      console.error("Failed to track API error in DB:", err)
+    );
+  }
 }
 
 /**

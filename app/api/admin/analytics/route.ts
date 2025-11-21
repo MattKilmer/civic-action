@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import analytics from "@/app/lib/analytics";
+import { getAnalyticsSnapshot, resetAnalytics } from "@/app/lib/analyticsDB";
 
 export const runtime = "edge";
 
@@ -37,14 +37,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Return analytics snapshot
-  const snapshot = analytics.getSnapshot();
+  // Return analytics snapshot from database
+  try {
+    const snapshot = await getAnalyticsSnapshot();
 
-  return NextResponse.json({
-    success: true,
-    data: snapshot,
-    generatedAt: new Date().toISOString(),
-  });
+    return NextResponse.json({
+      success: true,
+      data: snapshot,
+    });
+  } catch (error) {
+    console.error("Failed to fetch analytics:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch analytics data" },
+      { status: 500 }
+    );
+  }
 }
 
 /**
@@ -74,12 +81,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Reset analytics
-  analytics.reset();
+  // Reset analytics in database
+  try {
+    const result = await resetAnalytics();
 
-  return NextResponse.json({
-    success: true,
-    message: "Analytics data reset successfully",
-    timestamp: new Date().toISOString(),
-  });
+    if (!result.success) {
+      throw new Error("Reset failed");
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Analytics data reset successfully",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Failed to reset analytics:", error);
+    return NextResponse.json(
+      { error: "Failed to reset analytics data" },
+      { status: 500 }
+    );
+  }
 }
