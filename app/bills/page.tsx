@@ -478,24 +478,24 @@ export default function BillExplorerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <TopNav />
 
       <main className="flex-1 container mx-auto px-4 py-8 mt-20">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-up-1">
           <nav className="text-sm text-gray-600 mb-4">
             <Link href="/" className="hover:text-blue-600 transition-colors">
               Home
             </Link>
             <span className="mx-2">/</span>
-            <span className="text-gray-900">Bill Explorer</span>
+            <span className="text-gray-900 font-medium">Bill Explorer</span>
           </nav>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-4xl md:text-5xl text-gray-900 mb-3">
             Explore Legislation
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl">
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl leading-relaxed">
             Browse federal and state bills. Find legislation you care about and use it as the subject of your letter to representatives.
           </p>
 

@@ -4,8 +4,13 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --background-start-rgb: 248, 249, 252;
+  --background-end-rgb: 249, 250, 251;
+
+  /* Civic color palette */
+  --navy-deep: #1e3a5f;
+  --gold-accent: #d4af37;
+  --gold-light: #e6c35c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,10 +25,19 @@ body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
       to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+      rgb(248, 249, 252) 0%,
+      rgb(255, 255, 255) 40%,
+      rgb(249, 250, 251) 100%
+    );
+  background-attachment: fixed;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+}
+
+/* Apply display font to headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), serif;
+  letter-spacing: -0.02em;
+  font-weight: 400;
 }
 
 @layer utilities {
@@ -49,8 +63,94 @@ body {
     background: #6b7280;
   }
 
+  /* Enhanced fade-in animation */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
+  }
+
+  /* Staggered page load animations */
+  .animate-fade-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .animate-fade-up-1 {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0s both;
+  }
+
+  .animate-fade-up-2 {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+  }
+
+  .animate-fade-up-3 {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+  }
+
+  .animate-fade-up-4 {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  }
+
+  /* Card entrance animation with stagger */
+  .animate-card-entrance {
+    animation: fadeInSlide 0.4s ease-out both;
+  }
+
+  /* Enhanced button hover */
+  .btn-hover-lift {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-hover-lift:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-hover-lift:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  /* Gold accent button hover */
+  .btn-gold-hover:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  }
+
+  /* Enhanced card shadows */
+  .card-elevated {
+    background: linear-gradient(to bottom right, #ffffff, #f9fafb);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 8px 24px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+  }
+
+  .card-elevated:hover {
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.06),
+      0 12px 32px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Gradient step badges */
+  .step-badge-gradient {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow:
+      0 2px 8px rgba(37, 99, 235, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  /* Gold "Can vote" badge */
+  .badge-gold {
+    background: linear-gradient(to right, #d4af37, #e6c35c);
+    color: #1e3a5f;
+    box-shadow: 0 1px 3px rgba(212, 175, 55, 0.3);
+  }
+
+  /* Enhanced input focus */
+  .input-focus-enhanced:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow:
+      0 0 0 3px rgba(37, 99, 235, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   @keyframes fadeIn {
@@ -62,5 +162,50 @@ body {
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInSlide {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Scroll-triggered fade in */
+  .scroll-fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .scroll-fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Decorative gradient divider */
+  .gradient-divider {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(0, 0, 0, 0.1) 50%,
+      transparent
+    );
   }
 }

@@ -139,7 +139,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
     .toUpperCase();
 
   return (
-    <div className="rounded-2xl border border-gray-200 p-6 space-y-4 hover:shadow-md transition-shadow bg-white">
+    <div className={`card-elevated rounded-2xl p-6 space-y-4 transition-all duration-200 ${canVote && billNumber ? 'border-l-4 border-l-[#d4af37]' : ''}`}>
       <div className="flex gap-4 items-start">
         {/* Official Photo or Initials */}
         {official.photoUrl ? (
@@ -164,7 +164,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
             </p>
             {canVote && billNumber && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-xs font-medium"
+                className="badge-gold inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold"
                 aria-label="Can vote directly on this bill"
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
@@ -222,7 +222,7 @@ export default function OfficialCard({ official, draft, onDraft, phoneScript, on
       <div className="flex flex-wrap gap-2">
         <div className="relative group">
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
+            className="btn-hover-lift bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm"
             onClick={async () => {
               if (!hasIssue) return;
               setBusy(true);

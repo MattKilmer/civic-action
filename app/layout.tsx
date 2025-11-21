@@ -1,10 +1,24 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Serif_Display, IBM_Plex_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
-const inter = Inter({ subsets: ["latin"] });
+// Display font for headings - evokes civic documents and institutional gravitas
+const dmSerif = DM_Serif_Display({
+  weight: ['400'],
+  subsets: ["latin"],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+// Body font - modern, accessible, designed for government use
+const ibmPlex = IBM_Plex_Sans({
+  weight: ['400', '500', '600', '700'],
+  subsets: ["latin"],
+  variable: '--font-body',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://takecivicaction.org"),
@@ -253,7 +267,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(howToStructuredData) }}
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${ibmPlex.variable} ${dmSerif.variable} ${ibmPlex.className}`}>
         {children}
         <Analytics />
 

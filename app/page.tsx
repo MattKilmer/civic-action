@@ -126,25 +126,56 @@ function PageContent() {
   return (
     <>
       <TopNav />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen">
       <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
-        {/* Page Header */}
-        <header className="space-y-3">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-            Take action with your representatives
-          </h1>
-          <p className="text-base md:text-lg text-gray-600 max-w-3xl">
-            Enter your address to see your elected officials from local to federal level, then generate a respectful email to contact them.
-          </p>
+        {/* Page Header - Asymmetric Layout */}
+        <header className="animate-fade-up-1 relative">
+          <div className="grid md:grid-cols-[2fr,1fr] gap-8 items-center">
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl text-gray-900 leading-tight">
+                Take action with your representatives
+              </h1>
+              <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+                Enter your address to see your elected officials from local to federal level, then generate a respectful email to contact them.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  <span className="font-medium">100% Free</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  <span className="font-medium">No data stored</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  <span className="font-medium">Nonpartisan</span>
+                </div>
+              </div>
+            </div>
+            {/* Decorative Element - Hidden on mobile */}
+            <div className="hidden md:block opacity-10 absolute right-0 top-1/2 -translate-y-1/2 -z-10">
+              <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 20L180 60V140L100 180L20 140V60L100 20Z" stroke="#2563eb" strokeWidth="2" fill="#2563eb" fillOpacity="0.05"/>
+                <circle cx="100" cy="100" r="40" stroke="#2563eb" strokeWidth="2" fill="#2563eb" fillOpacity="0.05"/>
+              </svg>
+            </div>
+          </div>
         </header>
 
         {/* Address Form Section */}
-        <section ref={addressFormRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
+        <section ref={addressFormRef} className="card-elevated rounded-2xl p-6 md:p-8 space-y-4 animate-fade-up-2">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+            <div className="step-badge-gradient w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-semibold">
               1
             </div>
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+            <h2 className="text-xl md:text-2xl text-gray-900">
               Enter your address
             </h2>
           </div>
@@ -162,12 +193,12 @@ function PageContent() {
         )}
 
         {/* Issue Picker Section */}
-        <section ref={issuePickerRef} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-4">
+        <section ref={issuePickerRef} className="card-elevated rounded-2xl p-6 md:p-8 space-y-4 animate-fade-up-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+            <div className="step-badge-gradient w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-semibold">
               2
             </div>
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+            <h2 className="text-xl md:text-2xl text-gray-900">
               Choose your issue & stance
             </h2>
           </div>
@@ -186,12 +217,12 @@ function PageContent() {
 
         {/* Officials List Section - Only show after address is submitted */}
         {submittedAddress && (
-          <section className="space-y-4">
+          <section className="space-y-4 animate-fade-up-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+              <div className="step-badge-gradient w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-semibold">
                 3
               </div>
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              <h2 className="text-xl md:text-2xl text-gray-900">
                 Contact your officials
               </h2>
             </div>
