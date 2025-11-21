@@ -156,9 +156,9 @@ export default function AboutPage() {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                 </svg>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Privacy-First</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Privacy-Focused</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    We never store your address, political positions, or drafts. Our stateless architecture means there&apos;s no database to breach or data to sell.
+                    We collect minimal anonymous usage data to improve the service. No personal information, no tracking across the web, no data sales.
                   </p>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function AboutPage() {
               <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
               </svg>
-              <span className="leading-relaxed"><strong>Stateless Architecture:</strong> No database means your data never persists—ultimate privacy by design</span>
+              <span className="leading-relaxed"><strong>Privacy-Focused:</strong> Anonymous usage analytics only—no personal information stored</span>
             </li>
           </ul>
         </section>

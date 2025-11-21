@@ -4,22 +4,22 @@ import TopNav from "../components/TopNav";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - We Never Store Your Address or Political Positions",
-  description: "Take Civic Action's privacy-first approach: we never store your address, political positions, or letter drafts. Stateless architecture means no database to breach. Learn how we protect your privacy while helping you contact elected officials. GDPR compliant, no tracking, no data sales.",
+  title: "Privacy Policy - Anonymous Usage Analytics Only",
+  description: "Take Civic Action's privacy policy: we collect only anonymous, aggregated usage data to improve our service. No personal information stored—no names, emails, or accounts. No tracking across the web, no data sales. Full transparency about what we collect and why.",
   keywords: [
     "privacy policy civic engagement",
     "data privacy political tool",
-    "no data storage civic action",
-    "privacy-first government tool",
-    "stateless civic engagement",
-    "GDPR compliant civic tool"
+    "anonymous analytics civic action",
+    "privacy-focused government tool",
+    "minimal data collection",
+    "transparent privacy policy"
   ],
   alternates: {
     canonical: "https://takecivicaction.org/privacy",
   },
   openGraph: {
-    title: "Privacy Policy - Privacy-First Civic Engagement",
-    description: "We never store your address, political positions, or drafts. Stateless architecture, no tracking, no data sales. Full transparency.",
+    title: "Privacy Policy - Transparent and Privacy-Focused",
+    description: "Anonymous usage analytics only. No personal information, no tracking, no data sales. Full transparency.",
     url: "https://takecivicaction.org/privacy",
   },
 };
@@ -45,12 +45,12 @@ export default function PrivacyPage() {
           <div className="bg-emerald-50 border-l-4 border-emerald-600 p-6 rounded-r-lg mb-8">
             <h2 className="text-xl font-semibold text-emerald-900 mb-3">Our Privacy Commitment</h2>
             <p className="text-emerald-800 leading-relaxed">
-              <strong>We never store your address, political positions, or communication content.</strong> Take Civic Action is built with privacy-by-design architecture—our stateless system means there&apos;s no database to breach, no data to sell, and no tracking to worry about.
+              <strong>We collect only anonymous, aggregated usage data to improve our service.</strong> No personal information is stored—no names, email addresses, or accounts. We never sell your data or track you across the web.
             </p>
           </div>
 
           <p className="text-gray-700 leading-relaxed">
-            This privacy policy explains what data we do and don&apos;t collect, how we use it, and your rights. We believe civic participation requires trust, and trust requires transparency.
+            This privacy policy explains exactly what data we collect, how we use it, and your rights. We believe civic participation requires trust, and trust requires transparency.
           </p>
         </section>
 
@@ -66,9 +66,9 @@ export default function PrivacyPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Your Address</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Your Specific Address</h3>
                 <p className="text-gray-700">
-                  When you enter your address to find representatives, we use it instantly to look up your officials—then we discard it. It&apos;s never stored in any database.
+                  We log that an address lookup occurred and which state it was in (for usage statistics), but we never store your actual street address, city, or zip code.
                 </p>
               </div>
             </div>
@@ -80,9 +80,9 @@ export default function PrivacyPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Your Political Positions</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Your Specific Stance or Personal Stories</h3>
                 <p className="text-gray-700">
-                  The issues you select, your stance (support/oppose), and your personal stories are processed in real-time to generate your draft—but never saved.
+                  We track which general topics are popular (e.g., "healthcare" or "education"), but we never store your actual stance (support/oppose), personal stories, or any details you enter.
                 </p>
               </div>
             </div>
@@ -94,9 +94,9 @@ export default function PrivacyPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Your Letter Drafts</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Your Letter Content</h3>
                 <p className="text-gray-700">
-                  The AI-generated letters we create for you exist only in your browser. We don&apos;t store them on our servers.
+                  The AI-generated letters exist only in your browser. We never store the actual content of your letters.
                 </p>
               </div>
             </div>
@@ -201,16 +201,16 @@ export default function PrivacyPage() {
 
           <div className="space-y-4 text-gray-700">
             <p>
-              <strong>Operational Use:</strong> Your address is used instantly to look up your representatives via the 5 Calls API. Your issue and stance are sent to OpenAI to generate your letter draft. Both operations happen in real-time and nothing is stored.
+              <strong>Operational Use:</strong> Your address is sent to the 5 Calls API to look up your representatives. Your issue and stance are sent to OpenAI to generate your letter draft. The specific content is not stored—only anonymized counts.
             </p>
             <p>
-              <strong>Security & Abuse Prevention:</strong> Server logs help us detect and prevent abuse (spam, attacks, excessive requests). Rate limiting is based on anonymized IP addresses.
+              <strong>Security & Abuse Prevention:</strong> Server logs and IP-based rate limiting help us detect and prevent abuse (spam, attacks, excessive requests).
             </p>
             <p>
-              <strong>Service Improvement:</strong> Aggregate statistics help us understand which features are used and where to focus development (e.g., if everyone uses custom topics, we might expand the topic list).
+              <strong>Service Improvement:</strong> Anonymous aggregate statistics help us understand which features are used and where to focus development (e.g., which topics are most popular, which states have the most users).
             </p>
             <p>
-              <strong>What We Don&apos;t Do:</strong> We never sell data, share data with third parties (except as required to operate the service), or use data for advertising.
+              <strong>What We Don&apos;t Do:</strong> We never sell data, share data with third parties (except as required to operate the service like OpenAI and 5 Calls), or use data for advertising.
             </p>
           </div>
         </section>
@@ -285,7 +285,7 @@ export default function PrivacyPage() {
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Data Security</h2>
 
           <p className="text-gray-700 mb-4">
-            The best security is not storing data in the first place. Our stateless architecture means:
+            We minimize data collection and implement industry-standard security practices:
           </p>
 
           <ul className="space-y-2 text-gray-700">
@@ -293,7 +293,7 @@ export default function PrivacyPage() {
               <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
               </svg>
-              <span><strong>No database to breach:</strong> There&apos;s no central repository of user data that could be hacked.</span>
+              <span><strong>Minimal data storage:</strong> Only anonymous, aggregated usage statistics—no personal information that could identify you.</span>
             </li>
             <li className="flex gap-3">
               <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
