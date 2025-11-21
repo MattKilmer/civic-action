@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     logEmailDraft({
       topic: parsed.data.topic,
       stance: parsed.data.stance,
-      billNumber: parsed.data.billNumber || undefined,
+      billNumber: parsed.data.bill || undefined,
       officialRole: body.official?.role || "unknown",
       wordCount: text.split(/\s+/).length,
       ip,
