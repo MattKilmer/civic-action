@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     logBillSearch({
       query: query.trim(),
       billType: "state",
-      jurisdiction,
+      jurisdiction: jurisdiction || undefined,
       resultsCount: result.bills.length,
       ip,
       userAgent,
