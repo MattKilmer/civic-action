@@ -12,6 +12,7 @@ export const runtime = "edge";
 export async function GET(req: NextRequest) {
   // Rate limiting: 15 requests per minute (same as federal bill search)
   const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "anonymous";
+  const userAgent = req.headers.get("user-agent") || undefined;
   const rateLimitResult = rateLimit(`state-bill-search:${ip}`, 15, 60);
 
   if (!rateLimitResult.ok) {

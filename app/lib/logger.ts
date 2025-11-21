@@ -6,7 +6,11 @@
  * - Vercel Logs (built-in)
  * - Datadog, New Relic, etc.
  * - Custom log aggregation service
+ *
+ * Also feeds data to in-memory analytics aggregator for admin dashboard.
  */
+
+import analytics from "./analytics";
 
 type LogLevel = "info" | "warn" | "error";
 
@@ -61,6 +65,7 @@ export function logEvent(
 export function logAddressLookup(params: {
   address: string;
   officialsFound: number;
+  state?: string;
   ip?: string;
   userAgent?: string;
 }) {
@@ -70,10 +75,16 @@ export function logAddressLookup(params: {
       // Hash the address for privacy
       addressHash: hashString(params.address),
       officialsFound: params.officialsFound,
+      state: params.state,
     },
     "info",
     { ip: params.ip, userAgent: params.userAgent }
   );
+
+  // Feed to analytics aggregator
+  if (params.ip) {
+    analytics.trackAddressLookup(params.ip, params.state);
+  }
 }
 
 /**
@@ -98,6 +109,16 @@ export function logBillSearch(params: {
     "info",
     { ip: params.ip, userAgent: params.userAgent }
   );
+
+  // Feed to analytics aggregator
+  if (params.ip) {
+    analytics.trackBillSearch(
+      params.ip,
+      params.query,
+      params.billType,
+      params.jurisdiction
+    );
+  }
 }
 
 /**
@@ -124,6 +145,11 @@ export function logEmailDraft(params: {
     "info",
     { ip: params.ip, userAgent: params.userAgent }
   );
+
+  // Feed to analytics aggregator
+  if (params.ip) {
+    analytics.trackEmailDraft(params.ip, params.topic);
+  }
 }
 
 /**
@@ -146,6 +172,10 @@ export function logAPIError(params: {
     "error",
     { ip: params.ip, userAgent: params.userAgent }
   );
+
+  // Feed to analytics aggregator
+  const isRateLimit = params.statusCode === 429 || params.error.toLowerCase().includes("rate limit");
+  analytics.trackAPIError(params.endpoint, isRateLimit, params.ip);
 }
 
 /**

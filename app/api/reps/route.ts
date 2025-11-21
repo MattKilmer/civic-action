@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
     logAddressLookup({
       address,
       officialsFound: officials.length,
+      state: data.state,
       ip,
       userAgent,
     });

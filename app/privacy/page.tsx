@@ -36,7 +36,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="text-lg text-gray-600">
-            Last Updated: October 19, 2025
+            Last Updated: November 21, 2025
           </p>
         </div>
 
@@ -173,17 +173,22 @@ export default function PrivacyPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Aggregate Usage Statistics (Optional)</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Aggregate Usage Analytics</h3>
                 <p className="text-gray-700 mb-2">
-                  We may collect anonymized, aggregate data such as:
+                  We collect anonymized, aggregated data for service improvement and monitoring:
                 </p>
                 <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
-                  <li>Total number of letters generated (no content)</li>
-                  <li>General geographic distribution (state-level only, no addresses)</li>
-                  <li>Which issue topics are most selected (to improve topic list)</li>
+                  <li>Total number of address lookups, bill searches, and letters generated (no content or details)</li>
+                  <li>General geographic distribution (state-level only, no specific addresses or cities)</li>
+                  <li>Which issue topics and bill types are most selected (to improve our topic and bill lists)</li>
+                  <li>API error rates and performance metrics (to identify and fix technical issues)</li>
+                  <li>Rate limiting violations (to detect and prevent abuse)</li>
                 </ul>
                 <p className="text-sm text-gray-600 mt-2">
-                  <strong>Important:</strong> This data cannot be traced back to you. It&apos;s aggregated and anonymized.
+                  <strong>Important:</strong> This data is collected in real-time and stored temporarily in-memory. It is fully anonymized and cannot be traced back to you. IP addresses are used only for rate limiting and are never linked to your actions or stored long-term.
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  <strong>Access:</strong> Aggregated analytics are visible only to site administrators via a password-protected dashboard for monitoring service health and usage patterns.
                 </p>
               </div>
             </div>
