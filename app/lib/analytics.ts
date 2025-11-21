@@ -201,7 +201,7 @@ class AnalyticsAggregator {
 
     // Clean up old hours (keep last 24 hours)
     const cutoffHour = currentHour - 24;
-    for (const hour of this.data.hourlyActiveUsers.keys()) {
+    for (const hour of Array.from(this.data.hourlyActiveUsers.keys())) {
       if (hour < cutoffHour) {
         this.data.hourlyActiveUsers.delete(hour);
       }
