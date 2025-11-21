@@ -263,7 +263,7 @@ class AnalyticsAggregator {
 
     // Calculate active users in last 24 hours
     const last24HoursUsers = new Set<string>();
-    for (const users of this.data.hourlyActiveUsers.values()) {
+    for (const users of Array.from(this.data.hourlyActiveUsers.values())) {
       users.forEach(user => last24HoursUsers.add(user));
     }
 
