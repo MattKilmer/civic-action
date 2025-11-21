@@ -4,13 +4,17 @@
  */
 
 import { sql } from "./db";
-import crypto from "crypto";
 
 /**
  * Hash IP address for privacy (one-way, irreversible)
+ * Uses Web Crypto API for edge runtime compatibility
  */
-function hashIP(ip: string): string {
-  return crypto.createHash("sha256").update(ip).digest("hex");
+async function hashIP(ip: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 /**
@@ -18,9 +22,10 @@ function hashIP(ip: string): string {
  */
 export async function trackAddressLookup(ip: string, state?: string) {
   try {
+    const ipHash = await hashIP(ip);
     await sql`
       INSERT INTO analytics_events (event_type, ip_hash, state)
-      VALUES ('address_lookup', ${hashIP(ip)}, ${state || null})
+      VALUES ('address_lookup', ${ipHash}, ${state || null})
     `;
   } catch (error) {
     console.error("Failed to track address lookup:", error);
@@ -37,9 +42,10 @@ export async function trackBillSearch(
   jurisdiction?: string
 ) {
   try {
+    const ipHash = await hashIP(ip);
     await sql`
       INSERT INTO analytics_events (event_type, ip_hash, query, bill_type, jurisdiction)
-      VALUES ('bill_search', ${hashIP(ip)}, ${query}, ${billType}, ${jurisdiction || null})
+      VALUES ('bill_search', ${ipHash}, ${query}, ${billType}, ${jurisdiction || null})
     `;
   } catch (error) {
     console.error("Failed to track bill search:", error);
@@ -51,9 +57,10 @@ export async function trackBillSearch(
  */
 export async function trackEmailDraft(ip: string, topic: string) {
   try {
+    const ipHash = await hashIP(ip);
     await sql`
       INSERT INTO analytics_events (event_type, ip_hash, topic)
-      VALUES ('email_draft', ${hashIP(ip)}, ${topic})
+      VALUES ('email_draft', ${ipHash}, ${topic})
     `;
   } catch (error) {
     console.error("Failed to track email draft:", error);
@@ -69,9 +76,10 @@ export async function trackAPIError(
   ip?: string
 ) {
   try {
+    const ipHash = ip ? await hashIP(ip) : null;
     await sql`
       INSERT INTO analytics_events (event_type, endpoint, error_message, ip_hash)
-      VALUES ('api_error', ${endpoint}, ${errorMessage}, ${ip ? hashIP(ip) : null})
+      VALUES ('api_error', ${endpoint}, ${errorMessage}, ${ipHash})
     `;
   } catch (error) {
     console.error("Failed to track API error:", error);
@@ -83,9 +91,10 @@ export async function trackAPIError(
  */
 export async function trackRateLimitViolation(ip: string, endpoint: string) {
   try {
+    const ipHash = await hashIP(ip);
     await sql`
       INSERT INTO rate_limit_violations (ip_hash, endpoint)
-      VALUES (${hashIP(ip)}, ${endpoint})
+      VALUES (${ipHash}, ${endpoint})
     `;
   } catch (error) {
     console.error("Failed to track rate limit violation:", error);
